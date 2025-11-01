@@ -31,35 +31,7 @@ const AIAnalysis = () => {
   };
   
   // Device data state (starts empty, filled when fetched from ESP8266)
-  const [devices, setDevices] = useState([
-    {
-      id: 'Device_001',
-      temperature: 28.5,
-      humidity: 65,
-      soil: 45,
-      light: 850,
-      gps: '28.6139, 77.2090',
-      timestamp: '2025-11-01 10:23:45'
-    },
-    {
-      id: 'Device_002',
-      temperature: 29.2,
-      humidity: 62,
-      soil: 48,
-      light: 820,
-      gps: '28.6140, 77.2091',
-      timestamp: '2025-11-01 10:24:12'
-    },
-    {
-      id: 'Device_003',
-      temperature: 27.8,
-      humidity: 68,
-      soil: 42,
-      light: 880,
-      gps: '28.6138, 77.2089',
-      timestamp: '2025-11-01 10:24:45'
-    }
-  ]);
+  const [devices, setDevices] = useState([]);
 
   const [selectedCrop, setSelectedCrop] = useState('');
   const [query, setQuery] = useState('');
@@ -68,13 +40,15 @@ const AIAnalysis = () => {
 
   /**
    * Fetch real sensor data from ESP8266
-   * Uses cached data from board's /data endpoint
-   * Non-blocking - board serves cached values instantly
+   * 
+   * Development (localhost): Direct HTTP fetch to device
+   * Production (HTTPS): Uses proxy to avoid Mixed Content blocking
+   * 
+   * Proxy: https://azure.../api/device-data?ip=192.168.1.100
+   * Direct: http://192.168.1.100/data
    */
   const fetchDeviceData = async () => {
-    const dataURL = getDeviceDataURL();
-    
-    if (!dataURL) {
+    if (!deviceIP) {
       setStatusMessage('❌ No device connected. Please enter device IP first.');
       setTimeout(() => setStatusMessage(''), 3000);
       return;
@@ -84,13 +58,36 @@ const AIAnalysis = () => {
     setStatusMessage('⏳ Fetching data from device...');
 
     try {
-      const response = await fetch(dataURL, {
-        method: 'GET',
-        mode: 'cors',
-      });
+      // Check if we're in production (HTTPS) or development (HTTP)
+      const isProduction = window.location.protocol === 'https:';
+      
+      let response;
+      
+      if (isProduction) {
+        // Production: Use proxy to avoid Mixed Content blocking
+        const proxyURL = `/api/device-data?ip=${deviceIP}`;
+        response = await fetch(proxyURL, {
+          method: 'GET',
+        });
+      } else {
+        // Development: Direct fetch (HTTP to HTTP is allowed)
+        const deviceURL = `http://${deviceIP}/data`;
+        response = await fetch(deviceURL, {
+          method: 'GET',
+          mode: 'cors',
+        });
+      }
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        let errorMsg = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch (e) {
+          // Response is not JSON, use status text
+          errorMsg = response.statusText || errorMsg;
+        }
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
@@ -113,8 +110,8 @@ const AIAnalysis = () => {
         })
       };
 
-      // Add to devices array (keep history of readings)
-      setDevices(prev => [...prev, newDevice]);
+      // Add to devices array (newest first - prepend instead of append)
+      setDevices(prev => [newDevice, ...prev]);
       setStatusMessage('✓ Successfully fetched data from device!');
       
     } catch (error) {
@@ -214,38 +211,44 @@ const AIAnalysis = () => {
             </div>
           </div>
 
-          {/* Environmental Data Table */}
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <div className="inline-block min-w-full align-middle">
-              <table className="w-full border-collapse text-sm sm:text-base">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
-                      {t('device')}
-                    </th>
-                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
-                      {t('temperature')}
-                    </th>
-                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
-                      {t('humidity')}
-                    </th>
-                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
-                      {t('soil')}
-                    </th>
-                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
-                      {t('light')}
-                    </th>
-                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
-                      {t('gps')}
-                    </th>
-                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
-                      {t('timestamp')}
-                    </th>
+          {/* Environmental Data Table - Fixed height with scroll */}
+          <div className="overflow-x-auto overflow-y-auto -mx-4 sm:mx-0 max-h-[400px] sm:max-h-[500px] border border-gray-300 rounded-lg">
+            <table className="w-full border-collapse text-sm sm:text-base">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-gray-100">
+                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
+                    {t('device')}
+                  </th>
+                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
+                    {t('temperature')}
+                  </th>
+                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
+                    {t('humidity')}
+                  </th>
+                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
+                    {t('soil')}
+                  </th>
+                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
+                    {t('light')}
+                  </th>
+                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
+                    {t('gps')}
+                  </th>
+                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
+                    {t('timestamp')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {devices.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="border border-gray-300 px-4 py-8 text-center text-gray-500 italic">
+                      {t('noDataAvailable') || 'No data available. Click "Get Data" to fetch from device.'}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {devices.map((device) => (
-                    <tr key={device.id} className="hover:bg-gray-50">
+                ) : (
+                  devices.map((device, index) => (
+                    <tr key={`${device.id}-${device.timestamp}-${index}`} className="hover:bg-gray-50 bg-white">
                       <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap">{device.id}</td>
                       <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.temperature}</td>
                       <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.humidity}</td>
@@ -254,10 +257,10 @@ const AIAnalysis = () => {
                       <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm">{device.gps}</td>
                       <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm">{device.timestamp}</td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 

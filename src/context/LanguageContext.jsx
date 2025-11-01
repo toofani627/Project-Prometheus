@@ -48,6 +48,7 @@ const translations = {
     successfullyFetched: '✓ Successfully fetched data from 3 devices',
     dataUpdated: '📊 Data updated at',
     readyForAnalysis: '→ Ready for AI analysis',
+    noDataAvailable: 'No data available. Click "Get Data" to fetch from device.',
     
     // Crop Selection
     selectCropType: 'Select Crop Type',
@@ -112,6 +113,7 @@ const translations = {
     successfullyFetched: '✓ 3 उपकरणों से डेटा सफलतापूर्वक प्राप्त किया',
     dataUpdated: '📊 डेटा अपडेट किया गया',
     readyForAnalysis: '→ एआई विश्लेषण के लिए तैयार',
+    noDataAvailable: 'कोई डेटा उपलब्ध नहीं है। डिवाइस से डेटा प्राप्त करने के लिए "डेटा प्राप्त करें" पर क्लिक करें।',
     
     // Crop Selection
     selectCropType: 'फसल का प्रकार चुनें',
