@@ -62,21 +62,26 @@ const AIAnalysis = () => {
       const isProduction = window.location.protocol === 'https:';
       
       let response;
+      let fetchURL;
       
       if (isProduction) {
         // Production: Use proxy to avoid Mixed Content blocking
-        const proxyURL = `/api/device-data?ip=${deviceIP}`;
-        response = await fetch(proxyURL, {
+        fetchURL = `/api/device-data?ip=${deviceIP}`;
+        console.log('Production mode - Using proxy:', fetchURL);
+        response = await fetch(fetchURL, {
           method: 'GET',
         });
       } else {
         // Development: Direct fetch (HTTP to HTTP is allowed)
-        const deviceURL = `http://${deviceIP}/data`;
-        response = await fetch(deviceURL, {
+        fetchURL = `http://${deviceIP}/data`;
+        console.log('Development mode - Direct fetch:', fetchURL);
+        response = await fetch(fetchURL, {
           method: 'GET',
           mode: 'cors',
         });
       }
+      
+      console.log('Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         let errorMsg = `HTTP ${response.status}`;
@@ -93,8 +98,9 @@ const AIAnalysis = () => {
       const data = await response.json();
       
       // Transform ESP8266 data format to our table format
+      // ESP8266 sends: device, temperature, humidity, soilMoisture, lightLevel, latitude, longitude
       const newDevice = {
-        id: data.deviceID || deviceIP,
+        id: data.device || data.deviceID || deviceIP,
         temperature: data.temperature || 0,
         humidity: data.humidity || 0,
         soil: data.soilMoisture || 0,
@@ -116,10 +122,21 @@ const AIAnalysis = () => {
       
     } catch (error) {
       console.error('Device fetch error:', error);
-      setStatusMessage(`❌ Error: ${error.message}. Check device is online and CORS enabled.`);
+      
+      // Provide helpful error messages based on error type
+      let errorMessage = '❌ Error: ';
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        errorMessage += `Cannot reach device at ${deviceIP}. Check: (1) Device is powered on, (2) Connected to same WiFi, (3) IP address is correct.`;
+      } else if (error.message.includes('CORS')) {
+        errorMessage += `CORS issue. Device needs to send Access-Control-Allow-Origin header.`;
+      } else {
+        errorMessage += `${error.message}. Device: ${deviceIP}`;
+      }
+      
+      setStatusMessage(errorMessage);
     } finally {
       setLoading(false);
-      setTimeout(() => setStatusMessage(''), 5000);
+      setTimeout(() => setStatusMessage(''), 8000); // Show error for 8 seconds
     }
   };
 
