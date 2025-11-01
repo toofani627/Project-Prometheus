@@ -58,14 +58,20 @@ const AIAnalysis = () => {
     setStatusMessage('⏳ Fetching data from device...');
 
     try {
-      // Check if we're in production (HTTPS) or development (HTTP)
+      // Detect if deviceIP is local (192.168.x.x, 10.x.x.x) or public domain/IP
+      const isLocalIP = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|127\.)/.test(deviceIP);
       const isProduction = window.location.protocol === 'https:';
       
       let response;
       let fetchURL;
       
+      // If in production with LOCAL IP address, show helpful error
+      if (isProduction && isLocalIP) {
+        throw new Error(`Cannot access local IP ${deviceIP} from Azure server. Solutions: (1) Use ngrok to expose device, (2) Set up port forwarding, or (3) Test on local network only.`);
+      }
+      
       if (isProduction) {
-        // Production: Use proxy to avoid Mixed Content blocking
+        // Production with public domain/IP: Use proxy to avoid Mixed Content blocking
         fetchURL = `/api/device-data?ip=${deviceIP}`;
         console.log('Production mode - Using proxy:', fetchURL);
         response = await fetch(fetchURL, {

@@ -43,11 +43,28 @@ app.get("/api/device-data", async (req, res) => {
     });
   }
 
-  // Validate IP format
+  // Validate IP format (allow both IPs and domains)
   const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
-  if (!ipPattern.test(deviceIP)) {
+  const domainPattern = /^[a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)+$/;
+  
+  if (!ipPattern.test(deviceIP) && !domainPattern.test(deviceIP)) {
     return res.status(400).json({ 
-      error: "Invalid IP format" 
+      error: "Invalid IP address or domain format" 
+    });
+  }
+
+  // Check if it's a private/local IP address
+  const isLocalIP = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|127\.)/.test(deviceIP);
+  if (isLocalIP) {
+    return res.status(400).json({ 
+      error: "Cannot access local/private IP addresses from Azure server",
+      details: `${deviceIP} is on your local network and not accessible from the cloud. Use ngrok (https://ngrok.com) to create a public tunnel, or set up port forwarding on your router.`,
+      deviceIP: deviceIP,
+      suggestions: [
+        "Option 1: Use ngrok - Download from https://ngrok.com, run: ngrok http " + deviceIP.split(':')[0] + ":80",
+        "Option 2: Configure port forwarding on your router to make device publicly accessible",
+        "Option 3: Test on local network (open website at http://localhost:3000)"
+      ]
     });
   }
 
@@ -55,7 +72,9 @@ app.get("/api/device-data", async (req, res) => {
     // Import fetch for Node.js
     const fetch = (await import('node-fetch')).default;
     
-    const deviceURL = `http://${deviceIP}/data`;
+    // If deviceIP looks like a domain (e.g., ngrok), use https
+    const protocol = deviceIP.includes('.') && !ipPattern.test(deviceIP) ? 'https' : 'http';
+    const deviceURL = `${protocol}://${deviceIP}/data`;
     console.log(`Proxying request to: ${deviceURL}`);
     
     // Use AbortController for timeout (node-fetch v3)
