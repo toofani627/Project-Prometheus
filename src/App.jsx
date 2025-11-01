@@ -1,9 +1,39 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { useDeviceStore } from './store/deviceStore';
 import LanguageSelect from './components/LanguageSelect';
 import MainMenu from './components/MainMenu';
 import AIAnalysis from './components/AIAnalysis';
+
+/**
+ * DeviceIPHandler Component
+ * 
+ * Captures device IP from URL query parameter when redirected from ESP8266.
+ * Example: https://firstaiproject...net/?deviceIP=192.168.1.100
+ */
+const DeviceIPHandler = ({ children }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const setDeviceIP = useDeviceStore((state) => state.setDeviceIP);
+
+  useEffect(() => {
+    const deviceIP = searchParams.get('deviceIP');
+    if (deviceIP) {
+      // Validate IP format
+      const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+      if (ipPattern.test(deviceIP)) {
+        console.log('Device IP captured:', deviceIP);
+        setDeviceIP(deviceIP);
+        
+        // Remove deviceIP from URL to clean it up
+        searchParams.delete('deviceIP');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, setDeviceIP, setSearchParams]);
+
+  return children;
+};
 
 /**
  * AppContent Component
@@ -23,11 +53,13 @@ const AppContent = () => {
   // Once language is selected, show main app with routing
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<MainMenu />} />
-        <Route path="/ai-analysis" element={<AIAnalysis />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <DeviceIPHandler>
+        <Routes>
+          <Route path="/" element={<MainMenu />} />
+          <Route path="/ai-analysis" element={<AIAnalysis />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </DeviceIPHandler>
     </Router>
   );
 };

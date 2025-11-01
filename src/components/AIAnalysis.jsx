@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useDeviceStore } from '../store/deviceStore';
 
 /**
  * AIAnalysis Component
  * 
  * Full AI Analysis dashboard with:
- * - Device information table with mock environmental data
+ * - Device information table with REAL environmental data from ESP8266
  * - Control buttons (Get Data, Export JSON, Clear Data)
  * - Crop type selector dropdown
  * - pH scale visualization
@@ -14,10 +15,14 @@ import { useLanguage } from '../context/LanguageContext';
  * - AI Analysis button
  * 
  * All UI elements automatically translate based on selected language.
+ * Fetches real sensor data from ESP8266 via http://<deviceIP>/data endpoint
  */
 const AIAnalysis = () => {
   const { t, changeLanguage, language } = useLanguage();
   const navigate = useNavigate();
+  
+  // Device store for fetching data from ESP8266
+  const { deviceIP, getDeviceDataURL } = useDeviceStore();
 
   const handleLanguageSwitch = () => {
     // Clear language to show selection screen again
@@ -25,7 +30,7 @@ const AIAnalysis = () => {
     changeLanguage(null);
   };
   
-  // Mock device data
+  // Device data state (starts empty, filled when fetched from ESP8266)
   const [devices, setDevices] = useState([
     {
       id: 'Device_001',
@@ -59,11 +64,71 @@ const AIAnalysis = () => {
   const [selectedCrop, setSelectedCrop] = useState('');
   const [query, setQuery] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  /**
+   * Fetch real sensor data from ESP8266
+   * Uses cached data from board's /data endpoint
+   * Non-blocking - board serves cached values instantly
+   */
+  const fetchDeviceData = async () => {
+    const dataURL = getDeviceDataURL();
+    
+    if (!dataURL) {
+      setStatusMessage('❌ No device connected. Please enter device IP first.');
+      setTimeout(() => setStatusMessage(''), 3000);
+      return;
+    }
+
+    setLoading(true);
+    setStatusMessage('⏳ Fetching data from device...');
+
+    try {
+      const response = await fetch(dataURL, {
+        method: 'GET',
+        mode: 'cors',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Transform ESP8266 data format to our table format
+      const newDevice = {
+        id: data.deviceID || deviceIP,
+        temperature: data.temperature || 0,
+        humidity: data.humidity || 0,
+        soil: data.soilMoisture || 0,
+        light: data.lightLevel || 0,
+        gps: `${data.latitude || 0}, ${data.longitude || 0}`,
+        timestamp: new Date().toLocaleString('en-GB', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
+      };
+
+      // Add to devices array (keep history of readings)
+      setDevices(prev => [...prev, newDevice]);
+      setStatusMessage('✓ Successfully fetched data from device!');
+      
+    } catch (error) {
+      console.error('Device fetch error:', error);
+      setStatusMessage(`❌ Error: ${error.message}. Check device is online and CORS enabled.`);
+    } finally {
+      setLoading(false);
+      setTimeout(() => setStatusMessage(''), 5000);
+    }
+  };
 
   // Handler functions
   const handleGetData = () => {
-    setStatusMessage(t('successfullyFetched'));
-    setTimeout(() => setStatusMessage(''), 3000);
+    fetchDeviceData();
   };
 
   const handleExportJSON = () => {
@@ -83,7 +148,6 @@ const AIAnalysis = () => {
 
   const handleAIAnalysis = () => {
     setStatusMessage(t('readyForAnalysis'));
-    // UI-only action for now
     setTimeout(() => setStatusMessage(''), 3000);
   };
 

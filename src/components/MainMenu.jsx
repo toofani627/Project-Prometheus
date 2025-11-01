@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useDeviceStore } from '../store/deviceStore';
 
 /**
  * MainMenu Component
@@ -16,6 +17,9 @@ const MainMenu = () => {
   const navigate = useNavigate();
   const [showIPModal, setShowIPModal] = useState(false);
   const [ipAddress, setIpAddress] = useState('');
+  
+  // Device store for stored IP from ESP8266 redirection
+  const { deviceIP, getDeviceWebsiteURL, setDeviceIP } = useDeviceStore();
 
   const handleLanguageSwitch = () => {
     // Clear language to show selection screen again
@@ -24,13 +28,23 @@ const MainMenu = () => {
   };
 
   const handleDeviceControl = () => {
-    setShowIPModal(true);
+    // If device IP is already stored, use it directly
+    const websiteURL = getDeviceWebsiteURL();
+    if (websiteURL) {
+      window.open(websiteURL, '_blank');
+    } else {
+      // Otherwise, prompt for IP
+      setShowIPModal(true);
+    }
   };
 
   const handleIPSubmit = () => {
     if (ipAddress.trim()) {
-      // Redirect to device IP in new tab
-      window.open(`http://${ipAddress}/website`, '_blank');
+      // Save IP to store for future use
+      setDeviceIP(ipAddress.trim());
+      
+      // Redirect to device Website endpoint
+      window.open(`http://${ipAddress.trim()}/Website`, '_blank');
       setShowIPModal(false);
       setIpAddress('');
     }
