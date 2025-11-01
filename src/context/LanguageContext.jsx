@@ -136,9 +136,11 @@ const translations = {
 };
 
 export const LanguageProvider = ({ children }) => {
-  // Check localStorage for saved language preference, default to 'en'
+  // Check localStorage for saved language preference, default to null to show language selection
   const [language, setLanguage] = useState(() => {
-    return localStorage.getItem('language') || null;
+    const savedLanguage = localStorage.getItem('language');
+    // Only return saved language if it's valid ('en' or 'hi'), otherwise return null
+    return (savedLanguage === 'en' || savedLanguage === 'hi') ? savedLanguage : null;
   });
 
   // Save language preference to localStorage whenever it changes

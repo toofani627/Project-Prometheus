@@ -16,8 +16,14 @@ import { useLanguage } from '../context/LanguageContext';
  * All UI elements automatically translate based on selected language.
  */
 const AIAnalysis = () => {
-  const { t } = useLanguage();
+  const { t, changeLanguage, language } = useLanguage();
   const navigate = useNavigate();
+
+  const handleLanguageSwitch = () => {
+    // Clear language to show selection screen again
+    localStorage.removeItem('language');
+    changeLanguage(null);
+  };
   
   // Mock device data
   const [devices, setDevices] = useState([
@@ -106,7 +112,12 @@ const AIAnalysis = () => {
           <h1 className="text-3xl font-bold text-gray-800">
             {t('aiAnalysisDashboard')}
           </h1>
-          <div className="w-32"></div> {/* Spacer for centering */}
+          <button
+            onClick={handleLanguageSwitch}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm"
+          >
+            {language === 'en' ? '🌐 हिन्दी' : '🌐 English'}
+          </button>
         </div>
       </div>
 

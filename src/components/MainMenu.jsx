@@ -12,10 +12,16 @@ import { useLanguage } from '../context/LanguageContext';
  * All text automatically switches based on selected language.
  */
 const MainMenu = () => {
-  const { t } = useLanguage();
+  const { t, changeLanguage, language } = useLanguage();
   const navigate = useNavigate();
   const [showIPModal, setShowIPModal] = useState(false);
   const [ipAddress, setIpAddress] = useState('');
+
+  const handleLanguageSwitch = () => {
+    // Clear language to show selection screen again
+    localStorage.removeItem('language');
+    changeLanguage(null);
+  };
 
   const handleDeviceControl = () => {
     setShowIPModal(true);
@@ -38,9 +44,18 @@ const MainMenu = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <div className="bg-white shadow-sm py-6">
-        <h1 className="text-4xl font-bold text-center text-gray-800">
-          {t('mainMenu')}
-        </h1>
+        <div className="container mx-auto px-6 flex items-center justify-between">
+          <div className="w-32"></div> {/* Spacer */}
+          <h1 className="text-4xl font-bold text-center text-gray-800">
+            {t('mainMenu')}
+          </h1>
+          <button
+            onClick={handleLanguageSwitch}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm"
+          >
+            {language === 'en' ? '🌐 हिन्दी' : '🌐 English'}
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
