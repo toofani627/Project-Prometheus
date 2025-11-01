@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useDeviceStore } from '../store/deviceStore';
 
@@ -20,6 +20,7 @@ import { useDeviceStore } from '../store/deviceStore';
 const AIAnalysis = () => {
   const { t, changeLanguage, language } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   // Device store for fetching data from ESP8266
   const { deviceIP, getDeviceDataURL } = useDeviceStore();
@@ -37,6 +38,30 @@ const AIAnalysis = () => {
   const [query, setQuery] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Device ID state - captured from URL or manually entered
+  const [deviceId, setDeviceId] = useState('');
+  const [showDeviceIdInput, setShowDeviceIdInput] = useState(false);
+  const [manualDeviceId, setManualDeviceId] = useState('');
+  
+  // Capture device_id from URL on mount (for local network redirect)
+  useEffect(() => {
+    const urlDeviceId = searchParams.get('device_id');
+    if (urlDeviceId) {
+      setDeviceId(urlDeviceId);
+      localStorage.setItem('captured_device_id', urlDeviceId);
+      console.log('✅ Device ID captured from URL:', urlDeviceId);
+    } else {
+      // Check if previously captured
+      const savedDeviceId = localStorage.getItem('captured_device_id');
+      if (savedDeviceId) {
+        setDeviceId(savedDeviceId);
+        console.log('✅ Device ID loaded from storage:', savedDeviceId);
+      } else {
+        console.log('⚠️ No device ID - user must enter manually');
+      }
+    }
+  }, [searchParams]);
 
   /**
    * Fetch sensor data from ESP8266 via WebSocket
@@ -53,11 +78,19 @@ const AIAnalysis = () => {
    * - Only reads sensors when needed (saves power)
    * - Real-time bidirectional communication
    * 
-   * Note: Uses device ID (ESP1) instead of IP address for WebSocket connection
+   * Security: Device ID can be passed via URL parameter (?device_id=ESP1)
+   * If not provided, defaults to 'ESP1'
    */
   const fetchDeviceData = async () => {
-    // Always use device ID 'ESP1' for WebSocket-based communication
-    const deviceId = 'ESP1';
+    // Check if device ID is available
+    if (!deviceId) {
+      setStatusMessage('⚠️ Please enter a Device ID first');
+      setShowDeviceIdInput(true);
+      setTimeout(() => setStatusMessage(''), 3000);
+      return;
+    }
+    
+    console.log('Using device ID:', deviceId);
 
     setLoading(true);
     setStatusMessage('⏳ Requesting data from device...');
@@ -144,6 +177,20 @@ const AIAnalysis = () => {
     fetchDeviceData();
   };
 
+  const handleManualDeviceIdSubmit = (e) => {
+    e.preventDefault();
+    if (manualDeviceId.trim()) {
+      const trimmedId = manualDeviceId.trim();
+      setDeviceId(trimmedId);
+      localStorage.setItem('captured_device_id', trimmedId);
+      console.log('✅ Manual device ID saved:', trimmedId);
+      setShowDeviceIdInput(false);
+      setManualDeviceId('');
+      setStatusMessage(`✓ Device ID set: ${trimmedId}`);
+      setTimeout(() => setStatusMessage(''), 3000);
+    }
+  };
+
   const handleExportJSON = () => {
     const dataStr = JSON.stringify(devices, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -201,6 +248,86 @@ const AIAnalysis = () => {
       </div>
 
       <div className="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
+        {/* Device ID Section */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6 border-2 border-blue-200">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+              🔐 {language === 'en' ? 'Device Connection' : 'डिवाइस कनेक्शन'}
+            </h2>
+            {deviceId && (
+              <button
+                onClick={() => setShowDeviceIdInput(!showDeviceIdInput)}
+                className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+              >
+                {showDeviceIdInput ? '✕ Cancel' : '✏️ Change'}
+              </button>
+            )}
+          </div>
+
+          {/* Current Device ID Display */}
+          {deviceId && !showDeviceIdInput ? (
+            <div className="bg-white rounded-lg p-4 border-2 border-green-300">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">✓</span>
+                <span className="font-semibold text-gray-700">
+                  {language === 'en' ? 'Connected Device:' : 'कनेक्टेड डिवाइस:'}
+                </span>
+              </div>
+              <div className="font-mono text-xl font-bold text-green-700 mb-1">{deviceId}</div>
+              <p className="text-sm text-gray-600">
+                {language === 'en' 
+                  ? 'Device ID is stored. You can now fetch sensor data.' 
+                  : 'डिवाइस ID संग्रहीत है। अब आप सेंसर डेटा प्राप्त कर सकते हैं।'}
+              </p>
+            </div>
+          ) : (
+            /* Manual Device ID Entry Form */
+            <form onSubmit={handleManualDeviceIdSubmit} className="bg-white rounded-lg p-4 border-2 border-yellow-300">
+              <div className="flex items-start gap-2 mb-3">
+                <span className="text-2xl">⚠️</span>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-700 mb-1">
+                    {language === 'en' 
+                      ? 'No Device ID detected' 
+                      : 'कोई डिवाइस ID नहीं मिला'}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {language === 'en'
+                      ? 'Enter your device ID to connect. If you accessed via local network, it should be auto-detected.'
+                      : 'कनेक्ट करने के लिए अपना डिवाइस ID दर्ज करें। यदि आपने स्थानीय नेटवर्क के माध्यम से एक्सेस किया है, तो यह स्वचालित रूप से पहचाना जाना चाहिए।'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={manualDeviceId}
+                  onChange={(e) => setManualDeviceId(e.target.value)}
+                  placeholder={language === 'en' ? 'Enter Device ID (e.g., ESP1)' : 'डिवाइस ID दर्ज करें (जैसे ESP1)'}
+                  className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-mono"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200 active:scale-95 whitespace-nowrap"
+                >
+                  {language === 'en' ? '🔗 Connect' : '🔗 कनेक्ट करें'}
+                </button>
+              </div>
+
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs text-gray-600">
+                  💡 <strong>{language === 'en' ? 'Tip:' : 'सुझाव:'}</strong>{' '}
+                  {language === 'en'
+                    ? 'The device ID is printed on the Serial Monitor when the ESP8266 starts. Check your device documentation.'
+                    : 'ESP8266 शुरू होने पर डिवाइस ID सीरियल मॉनिटर पर प्रिंट होती है। अपने डिवाइस दस्तावेज़ की जांच करें।'}
+                </p>
+              </div>
+            </form>
+          )}
+        </div>
+
         {/* Device Information Section */}
         <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4">
