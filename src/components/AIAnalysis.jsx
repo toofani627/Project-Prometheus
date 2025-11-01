@@ -101,47 +101,49 @@ const AIAnalysis = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <div className="bg-white shadow-sm py-4 px-6">
-        <div className="container mx-auto flex items-center justify-between">
+      <div className="bg-white shadow-sm py-3 sm:py-4 px-4 sm:px-6">
+        <div className="container mx-auto flex items-center justify-between gap-2">
           <button
             onClick={() => navigate('/')}
-            className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2"
+            className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 sm:gap-2 text-sm sm:text-base whitespace-nowrap"
           >
-            {t('backToMenu')}
+            <span>←</span>
+            <span className="hidden xs:inline">{t('backToMenu')}</span>
           </button>
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-800 text-center flex-1 px-2">
             {t('aiAnalysisDashboard')}
           </h1>
           <button
             onClick={handleLanguageSwitch}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm"
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
           >
-            {language === 'en' ? '🌐 हिन्दी' : '🌐 English'}
+            <span className="hidden xs:inline">{language === 'en' ? '🌐 हिन्दी' : '🌐 English'}</span>
+            <span className="xs:hidden">🌐</span>
           </button>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
         {/* Device Information Section */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-800">{t('deviceInformation')}</h2>
-            <div className="flex gap-2">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">{t('deviceInformation')}</h2>
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleGetData}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200"
+                className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm sm:text-base active:scale-95"
               >
                 {t('getData')}
               </button>
               <button
                 onClick={handleExportJSON}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200"
+                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm sm:text-base active:scale-95"
               >
                 {t('exportJSON')}
               </button>
               <button
                 onClick={handleClearData}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200"
+                className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm sm:text-base active:scale-95"
               >
                 {t('clearData')}
               </button>
@@ -149,71 +151,73 @@ const AIAnalysis = () => {
           </div>
 
           {/* Environmental Data Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700">
-                    {t('device')}
-                  </th>
-                  <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700">
-                    {t('temperature')}
-                  </th>
-                  <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700">
-                    {t('humidity')}
-                  </th>
-                  <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700">
-                    {t('soil')}
-                  </th>
-                  <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700">
-                    {t('light')}
-                  </th>
-                  <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700">
-                    {t('gps')}
-                  </th>
-                  <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700">
-                    {t('timestamp')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {devices.map((device) => (
-                  <tr key={device.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-4 py-2">{device.id}</td>
-                    <td className="border border-gray-300 px-4 py-2">{device.temperature}</td>
-                    <td className="border border-gray-300 px-4 py-2">{device.humidity}</td>
-                    <td className="border border-gray-300 px-4 py-2">{device.soil}</td>
-                    <td className="border border-gray-300 px-4 py-2">{device.light}</td>
-                    <td className="border border-gray-300 px-4 py-2">{device.gps}</td>
-                    <td className="border border-gray-300 px-4 py-2">{device.timestamp}</td>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <table className="w-full border-collapse text-sm sm:text-base">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
+                      {t('device')}
+                    </th>
+                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
+                      {t('temperature')}
+                    </th>
+                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
+                      {t('humidity')}
+                    </th>
+                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
+                      {t('soil')}
+                    </th>
+                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
+                      {t('light')}
+                    </th>
+                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
+                      {t('gps')}
+                    </th>
+                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">
+                      {t('timestamp')}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {devices.map((device) => (
+                    <tr key={device.id} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap">{device.id}</td>
+                      <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.temperature}</td>
+                      <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.humidity}</td>
+                      <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.soil}</td>
+                      <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.light}</td>
+                      <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm">{device.gps}</td>
+                      <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm">{device.timestamp}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
         {/* Status Log */}
         {statusMessage && (
-          <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 mb-6">
-            <p className="text-gray-700">{statusMessage}</p>
-            <p className="text-sm text-gray-600 mt-1">
+          <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <p className="text-sm sm:text-base text-gray-700">{statusMessage}</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
               {t('dataUpdated')} {new Date().toLocaleTimeString()}
             </p>
-            <p className="text-sm text-gray-600">{t('readyForAnalysis')}</p>
+            <p className="text-xs sm:text-sm text-gray-600">{t('readyForAnalysis')}</p>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Left Column - Crop Selection and Query */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Crop Type Selector */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">{t('selectCropType')}</h3>
+            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">{t('selectCropType')}</h3>
               <select
                 value={selectedCrop}
                 onChange={(e) => setSelectedCrop(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
               >
                 <option value="">{t('chooseCrop')}</option>
                 <option value="wheat">{t('wheat')}</option>
@@ -225,41 +229,41 @@ const AIAnalysis = () => {
             </div>
 
             {/* Additional Query */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">{t('additionalQuery')}</h3>
+            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">{t('additionalQuery')}</h3>
               <textarea
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('queryPlaceholder')}
-                rows="6"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                rows="5"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm sm:text-base"
               ></textarea>
             </div>
           </div>
 
           {/* Right Column - pH Scale */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">{t('soilPHScale')}</h3>
-            <div className="flex justify-between gap-2 mb-4">
+          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">{t('soilPHScale')}</h3>
+            <div className="flex justify-between gap-1 sm:gap-2 mb-3 sm:mb-4">
               {phColors.map((ph) => (
                 <div key={ph.value} className="flex-1">
-                  <div className={`${ph.color} h-24 rounded-lg flex items-center justify-center text-white font-bold shadow-md`}>
+                  <div className={`${ph.color} h-16 sm:h-20 md:h-24 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs sm:text-sm md:text-base`}>
                     {ph.value}
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-sm text-gray-600 text-center italic">
+            <p className="text-xs sm:text-sm text-gray-600 text-center italic">
               {t('phNote')}
             </p>
           </div>
         </div>
 
         {/* AI Analysis Button */}
-        <div className="mt-6">
+        <div className="mt-4 sm:mt-6">
           <button
             onClick={handleAIAnalysis}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl text-lg transition-colors duration-200 shadow-lg"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 sm:py-4 rounded-xl text-base sm:text-lg transition-colors duration-200 shadow-lg active:scale-95"
           >
             {t('runAIAnalysis')}
           </button>
@@ -267,8 +271,8 @@ const AIAnalysis = () => {
       </div>
 
       {/* Help Button */}
-      <button className="fixed bottom-6 right-6 bg-gray-800 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors duration-200">
-        <span className="text-2xl">{t('help')}</span>
+      <button className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-gray-800 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors duration-200 active:scale-95">
+        <span className="text-xl sm:text-2xl">{t('help')}</span>
       </button>
     </div>
   );
