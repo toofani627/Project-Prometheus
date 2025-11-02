@@ -345,7 +345,12 @@ const callAgritechModel = async (messages) => {
     throw new Error("Azure AI service is not configured. Set AZURE_PHI4_ENDPOINT and AZURE_PHI4_API_KEY in .env");
   }
 
-  const url = `${azureAiEndpoint.replace(/\/$/, "")}/chat/completions?api-version=${azureAiApiVersion}`;
+  // If endpoint already contains /chat/completions, use it as-is; otherwise append it
+  let url = azureAiEndpoint.replace(/\/$/, "");
+  if (!url.includes('/chat/completions')) {
+    url += '/chat/completions';
+  }
+  url += `?api-version=${azureAiApiVersion}`;
 
   // Add 30-second timeout to prevent hanging requests
   const controller = new AbortController();
