@@ -347,36 +347,51 @@ const callAgritechModel = async (messages) => {
 
   const url = `${azureAiEndpoint.replace(/\/$/, "")}/chat/completions?api-version=${azureAiApiVersion}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${azureAiKey}`
-    },
-    body: JSON.stringify({
-      messages,
-      temperature: 0.4,
-      max_output_tokens: 600,
-      response_format: { type: "json_object" }
-    })
-  });
+  // Add 30-second timeout to prevent hanging requests
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Azure AI request failed (${response.status}): ${errorText}`);
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${azureAiKey}`
+      },
+      body: JSON.stringify({
+        messages,
+        temperature: 0.4,
+        max_output_tokens: 600,
+        response_format: { type: "json_object" }
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Azure AI request failed (${response.status}): ${errorText}`);
+    }
+
+    const result = await response.json();
+    const directContent = result?.output?.[0]?.content?.[0]?.text || result?.choices?.[0]?.message?.content;
+
+    if (!directContent) {
+      throw new Error("Azure AI returned an unexpected response format");
+    }
+
+    return {
+      raw: directContent,
+      parsed: JSON.parse(directContent)
+    };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Azure AI request timed out after 30 seconds');
+    }
+    throw error;
   }
-
-  const result = await response.json();
-  const directContent = result?.output?.[0]?.content?.[0]?.text || result?.choices?.[0]?.message?.content;
-
-  if (!directContent) {
-    throw new Error("Azure AI returned an unexpected response format");
-  }
-
-  return {
-    raw: directContent,
-    parsed: JSON.parse(directContent)
-  };
 };
 
 app.post("/api/ai/analyze", async (req, res) => {
