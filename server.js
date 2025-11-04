@@ -18,7 +18,59 @@ const azureAiEndpoint = process.env.AZURE_PHI4_ENDPOINT || "";
 const azureAiKey = process.env.AZURE_PHI4_API_KEY || "";
 const azureAiApiVersion = process.env.AZURE_PHI4_API_VERSION || "2024-05-01-preview";
 
-const AGRI_SYSTEM_PROMPT = "You are an agritech AI model that helps farmers by analyzing sensor and weather data. Always respond only in JSON format, never in normal text. Use short and simple words so that a farmer can easily understand the message. Keep the tone helpful and clear. Focus only on irrigation, nutrients, weather impact, and disease risk. Do not include any information about motor or pH.";
+const AGRI_SYSTEM_PROMPT = `You are an Agricultural Intelligence Assistant for precision farming in India.
+Analyze farm sensor data + weather to provide recommendations in JSON format.
+
+INPUT DATA:
+Location: latitude, longitude | Crop: [name] | Stage: [growth phase] | Area: [hectares]
+Sensors: pH [value], Moisture [%], Temp [°C], Humidity [%], Light [lux], Time [ISO]
+Weather Next 5 Days: [temp range, rainfall mm, wind speed] | Past 5 Days: [actual]
+Soil API: [soil type], OC [%], N-[level], P-[level], K-[level], Confidence [HIGH/MED/LOW]
+Farmer Query: [optional - specific question, skip if none]
+
+RESPOND ONLY IN THIS JSON FORMAT:
+{
+  "status": "GOOD|CAUTION|CRITICAL",
+  "query_answer": "Answer farmer query if provided (1-2 lines), else null",
+  "immediate_actions": [
+    {
+      "action": "Irrigation|Fertilizer|Pest spray|Disease spray|Other",
+      "what": "Specific action (e.g., 'Urea 40kg/ha')",
+      "when": "Within 24h|48h|3 days",
+      "confidence": "HIGH|MEDIUM|LOW"
+    }
+  ],
+  "warnings": [
+    {
+      "warning": "Short warning title",
+      "risk": "Drought|Disease|Pest|Waterlogging|Nutrient deficiency|Other",
+      "severity": "HIGH|MEDIUM|LOW",
+      "reason": "Brief explanation (1 line)"
+    }
+  ],
+  "analysis": {
+    "crop_health": "Good|Fair|Poor - one line assessment",
+    "moisture_status": "Optimal|Too wet|Too dry",
+    "nutrient_status": "Balanced|N-deficiency|P-deficiency|K-deficiency|Other",
+    "disease_pest_risk": "None|Low|Medium|High - specific threats",
+    "weather_impact": "Positive|Neutral|Negative - brief impact"
+  },
+  "midterm_plan": "3-7 day outlook (2-3 lines)",
+  "key_metrics": {
+    "expected_action_days": "Number of days farmer has to act",
+    "yield_impact": "Positive|Neutral|Negative|Unknown",
+    "next_review": "Recommended follow-up in X days"
+  }
+}
+
+RULES:
+- Keep all text SHORT and SIMPLE
+- Use farmer-friendly terms only
+- Numbers: specific quantities (not ranges)
+- Confidence HIGH/MEDIUM/LOW for each action
+- If no query: set query_answer to null
+- Status: GOOD (proceed normally), CAUTION (monitor closely), CRITICAL (act now)
+- If language is "hi" (Hindi), respond in Hindi; otherwise in English`;
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === "") {
@@ -28,34 +80,38 @@ const toNumberOrNull = (value) => {
   return Number.isFinite(num) ? num : null;
 };
 
-const buildAgritechMessages = ({ telemetry, weather, cropType, language, additionalQuery }) => {
-  const safeTelemetry = {
-    device: telemetry?.device || telemetry?.deviceId || telemetry?.deviceID || null,
-    temperature: toNumberOrNull(telemetry?.temperature),
-    humidity: toNumberOrNull(telemetry?.humidity),
-    soilMoisture: toNumberOrNull(telemetry?.soilMoisture),
-    soilMoistureRaw: toNumberOrNull(telemetry?.soilMoistureRaw),
-    lightLevel: toNumberOrNull(telemetry?.lightLevel),
-    lightStatus: telemetry?.lightStatus || null,
-    latitude: toNumberOrNull(telemetry?.latitude),
-    longitude: toNumberOrNull(telemetry?.longitude),
-    timestamp: telemetry?.timestamp || null
-  };
+const buildAgritechMessages = ({ telemetry, weather, cropType, cropStage, fieldArea, language, additionalQuery }) => {
+  // Extract weather arrays (token-efficient format)
+  const past5Days = weather?.past5Days || [];
+  const next5Days = weather?.next5Days || [];
 
-  const safeWeather = {
-    avg_temp_7d: toNumberOrNull(weather?.avg_temp_7d),
-    avg_humidity_7d: toNumberOrNull(weather?.avg_humidity_7d),
-    rainfall_30d: toNumberOrNull(weather?.rainfall_30d),
-    forecast_next_7d: weather?.forecast_next_7d || "unknown",
-    sunlight_hours_7d: toNumberOrNull(weather?.sunlight_hours_7d),
-    soil_moisture_trend: weather?.soil_moisture_trend || "stable",
-    rain_thresh: toNumberOrNull(weather?.rain_thresh)
-  };
+  // Weather as compact arrays: [temp_min, temp_max, rain_mm, wind_speed]
+  const past5Array = past5Days.map(d => `[${d.temp_min}, ${d.temp_max}, ${d.rain_mm}, ${d.wind_speed}]`).join(', ');
+  const next5Array = next5Days.map(d => `[${d.temp_min}, ${d.temp_max}, ${d.rain_mm}, ${d.wind_speed}]`).join(', ');
 
-  const telemetryBlock = JSON.stringify(safeTelemetry, null, 2);
-  const weatherBlock = JSON.stringify(safeWeather, null, 2);
+  // Sensor data as arrays
+  const sensorData = `pH=${telemetry?.pH || 'N/A'}, Moisture=${telemetry?.soilMoisture || 'N/A'}%, Temp=${telemetry?.temperature || 'N/A'}°C, Humidity=${telemetry?.humidity || 'N/A'}%, Light=${telemetry?.lightLevel || 'N/A'}lux`;
 
-  const userPrompt = `Analyze the following data and reply only in JSON format.\n\nTelemetry Data:\n${telemetryBlock}\n\nCrop Type: ${cropType || "unknown"}\nRegional Weather Data:\n${weatherBlock}\n\nLanguage: ${language || "en"}\nAdditional Question: ${additionalQuery || "None"}\n\nRules:\n1. Give output only in JSON format exactly as shown below.\n2. Do not add any text before or after the JSON.\n3. Use simple, farmer-friendly language in ${language || "en"}.\n4. Apply these logic rules:\n   - temperature > 35 C -> hot or heat stress.\n   - humidity > 90% -> high disease chance.\n   - soilMoistureRaw >= 1000 -> very dry -> water needed.\n   - rainfall_30d < rain_thresh and avg_temp_7d rising -> drought risk.\n   - Use forecast and soil moisture trend to adjust irrigation and disease prediction.\n\nReturn your answer strictly in this JSON format only:\n\n{\n  "summary": "<short one-line summary in ${language || "en"}>",\n  "alerts": ["<alert1>", "<alert2>", ...],\n  "predictions": {\n    "irrigation_need": "<low|medium|high>",\n    "disease_risk": "<low|medium|high>",\n    "nutrient_adjustment": "<short tip>",\n    "expected_crop_impact_next_7d": "<short>"\n  },\n  "recommended_actions": ["<simple step 1>", "<simple step 2>", ...],\n  "weather_analysis": {"recent": "<short>", "forecast": "<short>"},\n  "confidence": <0-1>,\n  "explanation": ["<short reason 1>", "<short reason 2>"],\n  "additional_query": "<one follow-up question based on ${additionalQuery || "the farmer's question"}>"\n}\n\nIf the data seems incomplete or unclear, still give your best guess in the same JSON structure. Never break format.`;
+  const userPrompt = `Location: ${telemetry?.latitude || 0}, ${telemetry?.longitude || 0}
+Crop: ${cropType || 'unknown'} | Stage: ${cropStage || 'unknown'} | Area: ${fieldArea || 'N/A'} hectares
+Sensors: ${sensorData}
+Weather Past 5 Days (min,max,rain,wind): ${past5Array || 'No data'}
+Weather Next 5 Days (min,max,rain,wind): ${next5Array || 'No data'}
+Language: ${language || 'en'}
+Farmer Query: ${additionalQuery || 'None'}
+
+Analyze and provide recommendations in JSON format as specified.`;
+
+  return [
+    {
+      role: "system",
+      content: AGRI_SYSTEM_PROMPT
+    },
+    {
+      role: "user",
+      content: userPrompt
+    }
+  ];
 
   return [
     {
@@ -399,13 +455,83 @@ const callAgritechModel = async (messages) => {
   }
 };
 
+/**
+ * Fetch weather data from Open-Meteo API
+ * Past 5 days + Next 5 days forecast
+ */
+const fetchWeatherData = async (latitude, longitude) => {
+  if (!latitude || !longitude || latitude === 0 || longitude === 0) {
+    console.warn('⚠️ Invalid coordinates, using default (Central India)');
+    latitude = 23.5;
+    longitude = 77.0;
+  }
+
+  const today = new Date();
+  const past5 = new Date(today);
+  past5.setDate(past5.getDate() - 5);
+  const future5 = new Date(today);
+  future5.setDate(future5.getDate() + 5);
+
+  const startDate = past5.toISOString().split('T')[0];
+  const endDate = future5.toISOString().split('T')[0];
+
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&start_date=${startDate}&end_date=${endDate}&timezone=auto`;
+
+  console.log(`🌦️  Fetching weather for (${latitude}, ${longitude})`);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Weather API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.daily || !data.daily.time) {
+      throw new Error('Weather API returned invalid format');
+    }
+
+    const daily = data.daily;
+    const allDays = daily.time.map((date, idx) => ({
+      date,
+      temp_max: daily.temperature_2m_max[idx] || 0,
+      temp_min: daily.temperature_2m_min[idx] || 0,
+      rain_mm: daily.precipitation_sum[idx] || 0,
+      wind_speed: daily.windspeed_10m_max[idx] || 0
+    }));
+
+    const todayStr = today.toISOString().split('T')[0];
+    const past5Days = allDays.filter(d => d.date < todayStr).slice(-5);
+    const next5Days = allDays.filter(d => d.date >= todayStr).slice(0, 5);
+
+    console.log(`✅ Weather: ${past5Days.length} past days, ${next5Days.length} forecast days`);
+    return { past5Days, next5Days };
+
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Weather API timed out');
+    }
+    throw error;
+  }
+};
+
 app.post("/api/ai/analyze", async (req, res) => {
+  console.log('\n🌾 === AI Analysis Started ===');
+  
   try {
     const {
       deviceId,
       telemetry: telemetryOverride,
       weather,
       cropType,
+      cropStage,
+      fieldArea,
       language: lang,
       additionalQuery
     } = req.body || {};
@@ -426,10 +552,29 @@ app.post("/api/ai/analyze", async (req, res) => {
       });
     }
 
+    // Fetch real-time weather data from Open-Meteo
+    let weatherData = { past5Days: [], next5Days: [] };
+    let weatherFetched = false;
+    
+    const lat = toNumberOrNull(telemetry?.latitude);
+    const lon = toNumberOrNull(telemetry?.longitude);
+    
+    console.log(`📍 Coordinates: lat=${lat}, lon=${lon}`);
+
+    try {
+      weatherData = await fetchWeatherData(lat, lon);
+      weatherFetched = true;
+      console.log('✅ Weather data fetched successfully');
+    } catch (error) {
+      console.warn('⚠️ Weather fetch failed, proceeding without weather:', error.message);
+    }
+
     const messages = buildAgritechMessages({
       telemetry,
-      weather,
+      weather: weatherData,
       cropType,
+      cropStage,
+      fieldArea,
       language: lang,
       additionalQuery
     });
@@ -440,8 +585,15 @@ app.post("/api/ai/analyze", async (req, res) => {
       success: true,
       deviceId: resolvedDeviceId || telemetry.device || null,
       analysis: aiResult.parsed,
-      raw: aiResult.raw
+      raw: aiResult.raw,
+      weather_fetched: weatherFetched,
+      weather_days: {
+        past: weatherData.past5Days.length,
+        forecast: weatherData.next5Days.length
+      }
     });
+    
+    console.log('✅ === AI Analysis Completed ===\n');
   } catch (error) {
     console.error("AI analysis error:", error);
     if (error instanceof SyntaxError) {

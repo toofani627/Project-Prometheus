@@ -31,10 +31,36 @@ const AIAnalysis = () => {
     changeLanguage(null);
   };
   
-  // Device data state (starts empty, filled when fetched from ESP8266)
-  const [devices, setDevices] = useState([]);
+  // Device data state with example data
+  const [devices, setDevices] = useState([
+    {
+      id: 'ESP_6853',
+      temperature: 28.5,
+      humidity: 65,
+      soil: 42,
+      pH: 6.8,
+      light: 750,
+      gps: '23.5, 77.0',
+      timestamp: new Date().toLocaleString(),
+      raw: {
+        device: 'ESP_6853',
+        temperature: 28.5,
+        humidity: 65,
+        soilMoisture: 42,
+        soilMoistureRaw: 850,
+        pH: 6.8,
+        lightLevel: 750,
+        lightStatus: 'Bright',
+        latitude: 23.5,
+        longitude: 77.0,
+        timestamp: new Date().toISOString()
+      }
+    }
+  ]);
 
   const [selectedCrop, setSelectedCrop] = useState('');
+  const [cropStage, setCropStage] = useState('');
+  const [fieldArea, setFieldArea] = useState('');
   const [query, setQuery] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -247,21 +273,12 @@ const AIAnalysis = () => {
       timestamp: raw.timestamp || Date.now()
     };
 
-    const weatherPayload = {
-      avg_temp_7d: telemetryPayload.temperature,
-      avg_humidity_7d: telemetryPayload.humidity,
-      rainfall_30d: null,
-      forecast_next_7d: 'unknown',
-      sunlight_hours_7d: null,
-      soil_moisture_trend: 'stable',
-      rain_thresh: 75
-    };
-
     const requestBody = {
       deviceId,
       telemetry: telemetryPayload,
-      weather: weatherPayload,
       cropType: selectedCrop || 'unknown',
+      cropStage: cropStage || 'unknown',
+      fieldArea: fieldArea || null,
       language: language || 'en',
       additionalQuery: query || 'None'
     };
@@ -270,7 +287,17 @@ const AIAnalysis = () => {
       setAiLoading(true);
       setAiError('');
       setAiResult(null);
-      setStatusMessage('⏳ Generating AI recommendations...');
+      
+      setStatusMessage('🌦️ Fetching weather data...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setStatusMessage('✅ Weather data received | 📝 Preparing prompt...');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      setStatusMessage('🤖 Sending to AI model...');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      setStatusMessage('⏳ Waiting for AI response...');
 
       const response = await fetch('/api/ai/analyze', {
         method: 'POST',
@@ -294,9 +321,13 @@ const AIAnalysis = () => {
         throw new Error(errorMessage);
       }
 
+      setStatusMessage('📥 Response received | 🔄 Parsing data...');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const result = await response.json();
       setAiResult(result.analysis || null);
-      setStatusMessage('✓ AI analysis ready');
+      
+      setStatusMessage('✅ Analysis complete | ✓ Successfully parsed!');
     } catch (error) {
       console.error('AI analysis error:', error);
       setAiResult(null);
@@ -535,6 +566,46 @@ const AIAnalysis = () => {
               </select>
             </div>
 
+            {/* Crop Stage and Field Area */}
+            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">
+                {language === 'hi' ? 'फसल चरण और क्षेत्र' : 'Crop Stage & Field Area'}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label className="block text-xs sm:text-sm text-gray-600 mb-2">
+                    {language === 'hi' ? 'फसल चरण' : 'Crop Stage'}
+                  </label>
+                  <select
+                    value={cropStage}
+                    onChange={(e) => setCropStage(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="">{language === 'hi' ? 'चुनें' : 'Select'}</option>
+                    <option value="seedling">{language === 'hi' ? 'अंकुरण' : 'Seedling'}</option>
+                    <option value="vegetative">{language === 'hi' ? 'वृद्धि' : 'Vegetative'}</option>
+                    <option value="flowering">{language === 'hi' ? 'फूल आना' : 'Flowering'}</option>
+                    <option value="fruiting">{language === 'hi' ? 'फल लगना' : 'Fruiting'}</option>
+                    <option value="maturity">{language === 'hi' ? 'परिपक्वता' : 'Maturity'}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm text-gray-600 mb-2">
+                    {language === 'hi' ? 'क्षेत्र (हेक्टेयर)' : 'Field Area (ha)'}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={fieldArea}
+                    onChange={(e) => setFieldArea(e.target.value)}
+                    placeholder={language === 'hi' ? 'जैसे: 2.5' : 'e.g., 2.5'}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Additional Query */}
             <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">{t('additionalQuery')}</h3>
@@ -605,78 +676,151 @@ const AIAnalysis = () => {
 
             {!aiLoading && aiResult && (
               <div className="space-y-4 sm:space-y-6">
-                {aiResult.summary && (
-                  <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm sm:text-base font-semibold">
-                    {aiResult.summary}
+                {/* Status Badge */}
+                {aiResult.status && (
+                  <div className={`border px-4 py-3 rounded-lg text-sm sm:text-base font-bold text-center ${
+                    aiResult.status === 'GOOD' ? 'bg-green-50 border-green-300 text-green-800' :
+                    aiResult.status === 'CAUTION' ? 'bg-yellow-50 border-yellow-300 text-yellow-800' :
+                    'bg-red-50 border-red-300 text-red-800'
+                  }`}>
+                    {aiResult.status === 'GOOD' ? '✅ ' : aiResult.status === 'CAUTION' ? '⚠️ ' : '🚨 '}
+                    {aiResult.status}
                   </div>
                 )}
 
-                {Array.isArray(aiResult.alerts) && aiResult.alerts.length > 0 && (
+                {/* Query Answer */}
+                {aiResult.query_answer && (
+                  <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg text-sm sm:text-base">
+                    <strong>{language === 'hi' ? '💬 आपके प्रश्न का उत्तर:' : '💬 Answer:'}</strong>
+                    <p className="mt-1">{aiResult.query_answer}</p>
+                  </div>
+                )}
+
+                {/* Immediate Actions */}
+                {Array.isArray(aiResult.immediate_actions) && aiResult.immediate_actions.length > 0 && (
                   <div>
                     <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? 'चेतावनियाँ' : 'Alerts'}
+                      {language === 'hi' ? '🎯 तुरंत करें' : '🎯 Immediate Actions'}
                     </h4>
-                    <ul className="list-disc list-inside space-y-1 text-sm sm:text-base text-red-600">
-                      {aiResult.alerts.map((alert, idx) => (
-                        <li key={`alert-${idx}`}>{alert}</li>
+                    <div className="space-y-2">
+                      {aiResult.immediate_actions.map((item, idx) => (
+                        <div key={idx} className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-semibold text-indigo-900">{item.action}</span>
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              item.confidence === 'HIGH' ? 'bg-green-200 text-green-800' :
+                              item.confidence === 'MEDIUM' ? 'bg-yellow-200 text-yellow-800' :
+                              'bg-gray-200 text-gray-800'
+                            }`}>{item.confidence}</span>
+                          </div>
+                          <p className="text-sm text-gray-700">{item.what}</p>
+                          <p className="text-xs text-gray-500 mt-1">⏰ {item.when}</p>
+                        </div>
                       ))}
-                    </ul>
-                  </div>
-                )}
-
-                {aiResult.predictions && (
-                  <div>
-                    <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? 'पूर्वानुमान' : 'Predictions'}
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="bg-indigo-50 rounded-lg p-3">
-                        <p className="text-xs uppercase text-indigo-600 tracking-wide mb-1">{language === 'hi' ? 'सिंचाई आवश्यकता' : 'Irrigation Need'}</p>
-                        <p className="text-sm sm:text-base font-semibold text-indigo-800">{aiResult.predictions.irrigation_need || '-'}</p>
-                      </div>
-                      <div className="bg-rose-50 rounded-lg p-3">
-                        <p className="text-xs uppercase text-rose-600 tracking-wide mb-1">{language === 'hi' ? 'रोग जोखिम' : 'Disease Risk'}</p>
-                        <p className="text-sm sm:text-base font-semibold text-rose-800">{aiResult.predictions.disease_risk || '-'}</p>
-                      </div>
-                      <div className="bg-amber-50 rounded-lg p-3">
-                        <p className="text-xs uppercase text-amber-600 tracking-wide mb-1">{language === 'hi' ? 'पोषक तत्व सलाह' : 'Nutrient Tip'}</p>
-                        <p className="text-sm sm:text-base font-semibold text-amber-800">{aiResult.predictions.nutrient_adjustment || '-'}</p>
-                      </div>
-                      <div className="bg-sky-50 rounded-lg p-3">
-                        <p className="text-xs uppercase text-sky-600 tracking-wide mb-1">{language === 'hi' ? 'अगले 7 दिन का प्रभाव' : 'Next 7 Days Impact'}</p>
-                        <p className="text-sm sm:text-base font-semibold text-sky-800">{aiResult.predictions.expected_crop_impact_next_7d || '-'}</p>
-                      </div>
                     </div>
                   </div>
                 )}
 
-                {Array.isArray(aiResult.recommended_actions) && aiResult.recommended_actions.length > 0 && (
+                {/* Warnings */}
+                {Array.isArray(aiResult.warnings) && aiResult.warnings.length > 0 && (
                   <div>
                     <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? 'अनुशंसित कदम' : 'Recommended Actions'}
+                      {language === 'hi' ? '⚠️ चेतावनियाँ' : '⚠️ Warnings'}
                     </h4>
-                    <ol className="list-decimal list-inside space-y-1 text-sm sm:text-base text-gray-700">
-                      {aiResult.recommended_actions.map((action, idx) => (
-                        <li key={`action-${idx}`}>{action}</li>
+                    <div className="space-y-2">
+                      {aiResult.warnings.map((item, idx) => (
+                        <div key={idx} className={`border rounded-lg p-3 ${
+                          item.severity === 'HIGH' ? 'bg-red-50 border-red-300' :
+                          item.severity === 'MEDIUM' ? 'bg-orange-50 border-orange-300' :
+                          'bg-yellow-50 border-yellow-300'
+                        }`}>
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-semibold text-gray-900">{item.warning}</span>
+                            <span className="text-xs px-2 py-1 rounded bg-white">{item.risk}</span>
+                          </div>
+                          <p className="text-sm text-gray-700">{item.reason}</p>
+                        </div>
                       ))}
-                    </ol>
+                    </div>
                   </div>
                 )}
 
-                {aiResult.weather_analysis && (
+                {/* Analysis */}
+                {aiResult.analysis && (
                   <div>
                     <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? 'मौसम विश्लेषण' : 'Weather Analysis'}
+                      {language === 'hi' ? '📊 विश्लेषण' : '📊 Analysis'}
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm sm:text-base">
-                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <p className="text-xs uppercase text-gray-500 tracking-wide mb-1">{language === 'hi' ? 'हालिया मौसम' : 'Recent'}</p>
-                        <p className="text-gray-700">{aiResult.weather_analysis.recent || '-'}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <p className="text-xs uppercase text-gray-500 tracking-wide mb-1">{language === 'hi' ? 'आगामी मौसम' : 'Forecast'}</p>
-                        <p className="text-gray-700">{aiResult.weather_analysis.forecast || '-'}</p>
-                      </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {aiResult.analysis.crop_health && (
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <p className="text-xs uppercase text-green-600 tracking-wide mb-1">{language === 'hi' ? 'फसल स्वास्थ्य' : 'Crop Health'}</p>
+                          <p className="text-sm font-semibold text-green-800">{aiResult.analysis.crop_health}</p>
+                        </div>
+                      )}
+                      {aiResult.analysis.moisture_status && (
+                        <div className="bg-blue-50 rounded-lg p-3">
+                          <p className="text-xs uppercase text-blue-600 tracking-wide mb-1">{language === 'hi' ? 'नमी स्थिति' : 'Moisture'}</p>
+                          <p className="text-sm font-semibold text-blue-800">{aiResult.analysis.moisture_status}</p>
+                        </div>
+                      )}
+                      {aiResult.analysis.nutrient_status && (
+                        <div className="bg-amber-50 rounded-lg p-3">
+                          <p className="text-xs uppercase text-amber-600 tracking-wide mb-1">{language === 'hi' ? 'पोषक तत्व' : 'Nutrients'}</p>
+                          <p className="text-sm font-semibold text-amber-800">{aiResult.analysis.nutrient_status}</p>
+                        </div>
+                      )}
+                      {aiResult.analysis.disease_pest_risk && (
+                        <div className="bg-rose-50 rounded-lg p-3">
+                          <p className="text-xs uppercase text-rose-600 tracking-wide mb-1">{language === 'hi' ? 'रोग/कीट' : 'Disease/Pest'}</p>
+                          <p className="text-sm font-semibold text-rose-800">{aiResult.analysis.disease_pest_risk}</p>
+                        </div>
+                      )}
+                      {aiResult.analysis.weather_impact && (
+                        <div className="bg-purple-50 rounded-lg p-3 sm:col-span-2">
+                          <p className="text-xs uppercase text-purple-600 tracking-wide mb-1">{language === 'hi' ? 'मौसम प्रभाव' : 'Weather Impact'}</p>
+                          <p className="text-sm font-semibold text-purple-800">{aiResult.analysis.weather_impact}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Midterm Plan */}
+                {aiResult.midterm_plan && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <h4 className="text-sm sm:text-base font-semibold text-purple-900 mb-2">
+                      {language === 'hi' ? '📅 3-7 दिन की योजना' : '📅 3-7 Day Plan'}
+                    </h4>
+                    <p className="text-sm text-gray-700">{aiResult.midterm_plan}</p>
+                  </div>
+                )}
+
+                {/* Key Metrics */}
+                {aiResult.key_metrics && (
+                  <div>
+                    <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
+                      {language === 'hi' ? '📈 प्रमुख मेट्रिक्स' : '📈 Key Metrics'}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {aiResult.key_metrics.expected_action_days && (
+                        <div className="bg-indigo-50 rounded-lg p-3 text-center">
+                          <p className="text-xs text-indigo-600 mb-1">{language === 'hi' ? 'कार्रवाई के दिन' : 'Action Days'}</p>
+                          <p className="text-2xl font-bold text-indigo-800">{aiResult.key_metrics.expected_action_days}</p>
+                        </div>
+                      )}
+                      {aiResult.key_metrics.yield_impact && (
+                        <div className="bg-green-50 rounded-lg p-3 text-center">
+                          <p className="text-xs text-green-600 mb-1">{language === 'hi' ? 'उपज प्रभाव' : 'Yield Impact'}</p>
+                          <p className="text-lg font-bold text-green-800">{aiResult.key_metrics.yield_impact}</p>
+                        </div>
+                      )}
+                      {aiResult.key_metrics.next_review && (
+                        <div className="bg-blue-50 rounded-lg p-3 text-center">
+                          <p className="text-xs text-blue-600 mb-1">{language === 'hi' ? 'अगली समीक्षा' : 'Next Review'}</p>
+                          <p className="text-lg font-bold text-blue-800">{aiResult.key_metrics.next_review}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
