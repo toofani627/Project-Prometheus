@@ -78,46 +78,46 @@ const translations = {
     
     // Main Menu
     mainMenu: 'मुख्य मेनू',
-    deviceControl: 'उपकरण नियंत्रण',
-    deviceControlDesc: 'कनेक्टेड IoT उपकरणों की निगरानी और नियंत्रण करें',
-    aiAnalysis: 'एआई विश्लेषण',
-    aiAnalysisDesc: 'एआई अंतर्दृष्टि के साथ पर्यावरणीय डेटा का विश्लेषण करें',
-    backToMenu: '← मेनू पर वापस जाएं',
+    deviceControl: 'डिवाइस कंट्रोल',
+    deviceControlDesc: 'जुड़े IoT डिवाइस को देखें और कंट्रोल करें',
+    aiAnalysis: 'AI जांच',
+    aiAnalysisDesc: 'AI की मदद से खेत का डेटा देखें',
+    backToMenu: '← मेनू पर वापस',
     
     // Device Control
-    enterIP: 'डिवाइस आईपी पता दर्ज करें',
-    ipPlaceholder: 'उदाहरण: 192.168.1.100',
-    connect: 'कनेक्ट करें',
+    enterIP: 'डिवाइस IP एड्रेस लिखें',
+    ipPlaceholder: 'जैसे: 192.168.1.100',
+    connect: 'जोड़ें',
     cancel: 'रद्द करें',
     
     // AI Analysis Dashboard
-    aiAnalysisDashboard: 'एआई विश्लेषण डैशबोर्ड',
-    deviceInformation: 'उपकरण की जानकारी',
-    environmentalData: 'पर्यावरणीय डेटा',
-    device: 'उपकरण',
+    aiAnalysisDashboard: 'AI जांच डैशबोर्ड',
+    deviceInformation: 'डिवाइस की जानकारी',
+    environmentalData: 'खेत का डेटा',
+    device: 'डिवाइस',
     temperature: 'तापमान (°C)',
-    humidity: 'आर्द्रता (%)',
-    soil: 'मिट्टी (%)',
-    light: 'प्रकाश',
-    gps: 'जीपीएस',
+    humidity: 'नमी (%)',
+    soil: 'मिट्टी नमी (%)',
+    light: 'रोशनी',
+    gps: 'लोकेशन',
     timestamp: 'समय',
     
     // Buttons
-    getData: 'डेटा प्राप्त करें',
-    exportJSON: 'JSON निर्यात करें',
-    clearData: 'डेटा साफ करें',
-    runAIAnalysis: 'एआई विश्लेषण चलाएं',
+    getData: 'डेटा लाएं',
+    exportJSON: 'JSON सेव करें',
+    clearData: 'डेटा मिटाएं',
+    runAIAnalysis: 'AI से जांच करें',
     
     // Status Log
-    statusLog: 'स्थिति लॉग',
-    successfullyFetched: '✓ 3 उपकरणों से डेटा सफलतापूर्वक प्राप्त किया',
-    dataUpdated: '📊 डेटा अपडेट किया गया',
-    readyForAnalysis: '→ एआई विश्लेषण के लिए तैयार',
-    noDataAvailable: 'कोई डेटा उपलब्ध नहीं है। डिवाइस से डेटा प्राप्त करने के लिए "डेटा प्राप्त करें" पर क्लिक करें।',
+    statusLog: 'स्टेटस',
+    successfullyFetched: '✓ 3 डिवाइस से डेटा मिल गया',
+    dataUpdated: '📊 डेटा अपडेट हुआ',
+    readyForAnalysis: '→ AI जांच के लिए तैयार',
+    noDataAvailable: 'डेटा नहीं है। "डेटा लाएं" बटन दबाएं।',
     
     // Crop Selection
-    selectCropType: 'फसल का प्रकार चुनें',
-    chooseCrop: 'एक फसल चुनें...',
+    selectCropType: 'फसल चुनें',
+    chooseCrop: 'फसल चुनें...',
     wheat: 'गेहूं',
     rice: 'चावल',
     maize: 'मक्का',
@@ -125,12 +125,12 @@ const translations = {
     cotton: 'कपास',
     
     // pH Scale
-    soilPHScale: 'मिट्टी pH स्केल',
-    phNote: 'pH मान अम्लीय (लाल) से तटस्थ (हरा) से क्षारीय (नीला) तक',
+    soilPHScale: 'मिट्टी pH लेवल',
+    phNote: 'pH - खट्टा (लाल) से साधारण (हरा) से खारी (नीला)',
     
     // Additional Query
-    additionalQuery: 'अतिरिक्त प्रश्न',
-    queryPlaceholder: 'अपनी फसलों या पर्यावरणीय परिस्थितियों के बारे में कोई विशिष्ट प्रश्न या टिप्पणी दर्ज करें...',
+    additionalQuery: 'और सवाल',
+    queryPlaceholder: 'फसल या मौसम के बारे में कोई सवाल लिखें...',
     
     // Help
     help: '?',

@@ -67,11 +67,16 @@ const AIAnalysis = () => {
   const [aiResult, setAiResult] = useState(null);
   const [aiError, setAiError] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorPopup, setErrorPopup] = useState({ show: false, message: '', solution: '', type: 'error' });
   
   // Device ID state - captured from URL or manually entered
   const [deviceId, setDeviceId] = useState('');
   const [showDeviceIdInput, setShowDeviceIdInput] = useState(false);
   const [manualDeviceId, setManualDeviceId] = useState('');
+  
+  // Table display state - show only 4 rows by default
+  const [showAllRows, setShowAllRows] = useState(false);
   
   // Capture device_id from URL on mount (for local network redirect)
   useEffect(() => {
@@ -113,16 +118,19 @@ const AIAnalysis = () => {
   const fetchDeviceData = async () => {
     // Check if device ID is available
     if (!deviceId) {
-      setStatusMessage('⚠️ Please enter a Device ID first');
+      setErrorPopup({
+        show: true,
+        message: language === 'hi' ? 'पहले डिवाइस ID डालें' : 'Please enter Device ID first',
+        solution: language === 'hi' ? 'ऊपर बॉक्स में अपना डिवाइस ID टाइप करें' : 'Type your Device ID in the box above'
+      });
       setShowDeviceIdInput(true);
-      setTimeout(() => setStatusMessage(''), 3000);
       return;
     }
     
     console.log('Using device ID:', deviceId);
 
     setLoading(true);
-    setStatusMessage('⏳ Requesting data from device...');
+    setStatusMessage('⏳ ' + (language === 'hi' ? 'डिवाइस से डेटा मांग रहे हैं...' : 'Requesting data from device...'));
 
     try {
       console.log('Step 1: Sending READ_SENSORS command to device:', deviceId);
@@ -140,7 +148,7 @@ const AIAnalysis = () => {
       const requestResult = await requestResponse.json();
       console.log('Command sent successfully:', requestResult);
       
-      setStatusMessage('⏳ Device is reading sensors...');
+      setStatusMessage('⏳ ' + (language === 'hi' ? 'डिवाइस सेंसर पढ़ रहा है...' : 'Device is reading sensors...'));
       
       // Step 2: Wait a moment for device to read sensors (2 seconds)
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -180,25 +188,45 @@ const AIAnalysis = () => {
 
       // Add to devices array (newest first - prepend instead of append)
       setDevices(prev => [newDevice, ...prev]);
-      setStatusMessage('✓ Successfully fetched data from device!');
+      
+      // Show success popup
+      setErrorPopup({
+        show: true,
+        message: language === 'hi' ? '✓ डेटा मिल गया!' : '✓ Data received successfully!',
+        solution: language === 'hi' ? 'अब नीचे टेबल में देखें' : 'Check the table below',
+        type: 'success'
+      });
+      setStatusMessage('');
       
     } catch (error) {
       console.error('Device fetch error:', error);
       
       // Provide helpful error messages based on error type
-      let errorMessage = '❌ Error: ';
-      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        errorMessage += `Cannot reach device at ${deviceIP}. Check: (1) Device is powered on, (2) Connected to same WiFi, (3) IP address is correct.`;
-      } else if (error.message.includes('CORS')) {
-        errorMessage += `CORS issue. Device needs to send Access-Control-Allow-Origin header.`;
+      let errorMessage = '';
+      let solution = '';
+      
+      if (error.message.includes('Device not connected')) {
+        errorMessage = language === 'hi' ? 'डिवाइस कनेक्ट नहीं है' : 'Device not connected';
+        solution = language === 'hi' ? 'डिवाइस चालू करें और वाईफाई से जोड़ें' : 'Turn on device and connect to WiFi';
+      } else if (error.message.includes('offline')) {
+        errorMessage = language === 'hi' ? 'डिवाइस ऑफलाइन है' : 'Device is offline';
+        solution = language === 'hi' ? 'डिवाइस की पॉवर और इंटरनेट चेक करें' : 'Check device power and internet';
+      } else if (error.message.includes('No data available')) {
+        errorMessage = language === 'hi' ? 'डेटा नहीं मिला' : 'No data available';
+        solution = language === 'hi' ? '2-3 मिनट इंतजार करें और फिर कोशिश करें' : 'Wait 2-3 minutes and try again';
       } else {
-        errorMessage += `${error.message}. Device: ${deviceIP}`;
+        errorMessage = language === 'hi' ? 'डेटा लेने में गड़बड़ी' : 'Error getting data';
+        solution = language === 'hi' ? 'डिवाइस ID चेक करें या दोबारा कोशिश करें' : 'Check Device ID or try again';
       }
       
-      setStatusMessage(errorMessage);
+      setErrorPopup({
+        show: true,
+        message: errorMessage,
+        solution: solution
+      });
+      setStatusMessage('');
     } finally {
       setLoading(false);
-      setTimeout(() => setStatusMessage(''), 8000); // Show error for 8 seconds
     }
   };
 
@@ -238,15 +266,25 @@ const AIAnalysis = () => {
 
   const handleAIAnalysis = async () => {
     if (!deviceId) {
-      setStatusMessage('⚠️ Please enter a Device ID first');
+      setErrorPopup({
+        show: true,
+        type: 'error',
+        message: language === 'hi' ? 'पहले डिवाइस ID डालें' : 'Enter Device ID first',
+        solution: language === 'hi' ? 'ऊपर डिवाइस ID बॉक्स में अपना ID टाइप करें' : 'Type your ID in the Device ID box above'
+      });
       setShowDeviceIdInput(true);
-      setTimeout(() => setStatusMessage(''), 4000);
+      setTimeout(() => setErrorPopup({ show: false, type: '', message: '', solution: '' }), 5000);
       return;
     }
 
     if (!devices.length || !devices[0]?.raw) {
-      setStatusMessage('⚠️ Fetch the latest sensor data before running AI analysis');
-      setTimeout(() => setStatusMessage(''), 4000);
+      setErrorPopup({
+        show: true,
+        type: 'error',
+        message: language === 'hi' ? 'पहले सेंसर डेटा लें' : 'Get sensor data first',
+        solution: language === 'hi' ? '"Get Data" बटन दबाएं' : 'Click "Get Data" button'
+      });
+      setTimeout(() => setErrorPopup({ show: false, type: '', message: '', solution: '' }), 5000);
       return;
     }
 
@@ -331,11 +369,38 @@ const AIAnalysis = () => {
     } catch (error) {
       console.error('AI analysis error:', error);
       setAiResult(null);
-      setAiError(error.message || 'Failed to generate AI analysis.');
-      setStatusMessage('❌ Failed to generate AI analysis');
+      
+      // Create simple, actionable error message
+      let simpleError = language === 'hi' 
+        ? 'AI से जवाब नहीं मिला। कृपया दोबारा कोशिश करें।' 
+        : 'AI response failed. Please try again.';
+      
+      // Check for specific errors
+      if (error.message.includes('network') || error.message.includes('fetch')) {
+        simpleError = language === 'hi'
+          ? 'इंटरनेट कनेक्शन जांचें और फिर से कोशिश करें।'
+          : 'Check internet connection and retry.';
+      } else if (error.message.includes('timeout')) {
+        simpleError = language === 'hi'
+          ? 'समय समाप्त। कृपया फिर से कोशिश करें।'
+          : 'Request timeout. Please try again.';
+      } else if (error.message.includes('500') || error.message.includes('502')) {
+        simpleError = language === 'hi'
+          ? 'सर्वर में दिक्कत है। थोड़ी देर बाद कोशिश करें।'
+          : 'Server issue. Try again in a moment.';
+      }
+      
+      setAiError(simpleError);
+      setShowErrorPopup(true);
+      setStatusMessage('');
+      
+      // Auto-hide popup after 5 seconds
+      setTimeout(() => {
+        setShowErrorPopup(false);
+        setAiError('');
+      }, 5000);
     } finally {
       setAiLoading(false);
-      setTimeout(() => setStatusMessage(''), 8000);
     }
   };
 
@@ -367,10 +432,9 @@ const AIAnalysis = () => {
           </h1>
           <button
             onClick={handleLanguageSwitch}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-xs sm:text-sm whitespace-nowrap"
           >
-            <span className="hidden xs:inline">{language === 'en' ? '🌐 हिन्दी' : '🌐 English'}</span>
-            <span className="xs:hidden">🌐</span>
+            हिंदी/En
           </button>
         </div>
       </div>
@@ -402,11 +466,30 @@ const AIAnalysis = () => {
                 </span>
               </div>
               <div className="font-mono text-xl font-bold text-green-700 mb-1">{deviceId}</div>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 mb-3">
                 {language === 'en' 
                   ? 'Device ID is stored. You can now fetch sensor data.' 
-                  : 'डिवाइस ID संग्रहीत है। अब आप सेंसर डेटा प्राप्त कर सकते हैं।'}
+                  : 'डिवाइस ID सेव है। अब डेटा ले सकते हैं।'}
               </p>
+              
+              {/* Get Data Button */}
+              <button
+                onClick={handleGetData}
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors duration-200 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    <span>{language === 'en' ? 'Fetching...' : 'डेटा आ रहा है...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>📊</span>
+                    <span>{t('getData')}</span>
+                  </>
+                )}
+              </button>
             </div>
           ) : (
             /* Manual Device ID Entry Form */
@@ -417,12 +500,12 @@ const AIAnalysis = () => {
                   <p className="font-semibold text-gray-700 mb-1">
                     {language === 'en' 
                       ? 'No Device ID detected' 
-                      : 'कोई डिवाइस ID नहीं मिला'}
+                      : 'डिवाइस ID नहीं मिला'}
                   </p>
                   <p className="text-sm text-gray-600">
                     {language === 'en'
                       ? 'Enter your device ID to connect. If you accessed via local network, it should be auto-detected.'
-                      : 'कनेक्ट करने के लिए अपना डिवाइस ID दर्ज करें। यदि आपने स्थानीय नेटवर्क के माध्यम से एक्सेस किया है, तो यह स्वचालित रूप से पहचाना जाना चाहिए।'}
+                      : 'डिवाइस जोड़ने के लिए ID लिखें। लोकल नेटवर्क से अपने आप मिल जाना चाहिए।'}
                   </p>
                 </div>
               </div>
@@ -432,7 +515,7 @@ const AIAnalysis = () => {
                   type="text"
                   value={manualDeviceId}
                   onChange={(e) => setManualDeviceId(e.target.value)}
-                  placeholder={language === 'en' ? 'Enter Device ID (e.g., ESP1)' : 'डिवाइस ID दर्ज करें (जैसे ESP1)'}
+                  placeholder={language === 'en' ? 'Enter Device ID (e.g., ESP1)' : 'डिवाइस ID लिखें (जैसे ESP1)'}
                   className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-mono"
                   required
                 />
@@ -440,16 +523,16 @@ const AIAnalysis = () => {
                   type="submit"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200 active:scale-95 whitespace-nowrap"
                 >
-                  {language === 'en' ? '🔗 Connect' : '🔗 कनेक्ट करें'}
+                  {language === 'en' ? '🔗 Connect' : '🔗 जोड़ें'}
                 </button>
               </div>
 
               <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                 <p className="text-xs text-gray-600">
-                  💡 <strong>{language === 'en' ? 'Tip:' : 'सुझाव:'}</strong>{' '}
+                  💡 <strong>{language === 'en' ? 'Tip:' : 'टिप:'}</strong>{' '}
                   {language === 'en'
-                    ? 'The device ID is printed on the Serial Monitor when the ESP8266 starts. Check your device documentation.'
-                    : 'ESP8266 शुरू होने पर डिवाइस ID सीरियल मॉनिटर पर प्रिंट होती है। अपने डिवाइस दस्तावेज़ की जांच करें।'}
+                    ? 'The device ID will be shown on the LCD/Screen of the tool. Check your device display.'
+                    : 'डिवाइस ID टूल की स्क्रीन पर दिखेगी। अपने डिवाइस की स्क्रीन देखें।'}
                 </p>
               </div>
             </form>
@@ -458,28 +541,8 @@ const AIAnalysis = () => {
 
         {/* Device Information Section */}
         <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4">
+          <div className="mb-4">
             <h2 className="text-lg sm:text-xl font-bold text-gray-800">{t('deviceInformation')}</h2>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleGetData}
-                className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm sm:text-base active:scale-95"
-              >
-                {t('getData')}
-              </button>
-              <button
-                onClick={handleExportJSON}
-                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm sm:text-base active:scale-95"
-              >
-                {t('exportJSON')}
-              </button>
-              <button
-                onClick={handleClearData}
-                className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm sm:text-base active:scale-95"
-              >
-                {t('clearData')}
-              </button>
-            </div>
           </div>
 
           {/* Environmental Data Table - Fixed height with scroll */}
@@ -518,7 +581,7 @@ const AIAnalysis = () => {
                     </td>
                   </tr>
                 ) : (
-                  devices.map((device, index) => (
+                  (showAllRows ? devices : devices.slice(0, 4)).map((device, index) => (
                     <tr key={`${device.id}-${device.timestamp}-${index}`} className="hover:bg-gray-50 bg-white">
                       <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap">{device.id}</td>
                       <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.temperature}</td>
@@ -533,6 +596,20 @@ const AIAnalysis = () => {
               </tbody>
             </table>
           </div>
+          
+          {/* Show More/Less Button */}
+          {devices.length > 4 && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setShowAllRows(!showAllRows)}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200 active:scale-95"
+              >
+                {showAllRows 
+                  ? (language === 'en' ? '📋 Show Less' : '📋 कम दिखाएं')
+                  : (language === 'en' ? `📋 See Complete Table (${devices.length} rows)` : `📋 पूरी टेबल देखें (${devices.length} पंक्तियाँ)`)}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Status Log */}
@@ -558,23 +635,39 @@ const AIAnalysis = () => {
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
               >
                 <option value="">{t('chooseCrop')}</option>
-                <option value="wheat">{t('wheat')}</option>
-                <option value="rice">{t('rice')}</option>
-                <option value="maize">{t('maize')}</option>
-                <option value="sugarcane">{t('sugarcane')}</option>
-                <option value="cotton">{t('cotton')}</option>
+                <option value="wheat">{language === 'hi' ? '🌾 गेहूं (Wheat)' : '🌾 Wheat'}</option>
+                <option value="rice">{language === 'hi' ? '🍚 धान (Rice)' : '🍚 Rice'}</option>
+                <option value="maize">{language === 'hi' ? '🌽 मक्का (Maize)' : '🌽 Maize/Corn'}</option>
+                <option value="sugarcane">{language === 'hi' ? '🎋 गन्ना (Sugarcane)' : '🎋 Sugarcane'}</option>
+                <option value="cotton">{language === 'hi' ? '☁️ कपास (Cotton)' : '☁️ Cotton'}</option>
+                <option value="soybean">{language === 'hi' ? '🫘 सोयाबीन (Soybean)' : '🫘 Soybean'}</option>
+                <option value="chickpea">{language === 'hi' ? '🫛 चना (Chickpea)' : '🫛 Chickpea/Gram'}</option>
+                <option value="pigeon-pea">{language === 'hi' ? '🫘 तूर/अरहर (Pigeon Pea)' : '🫘 Pigeon Pea/Arhar'}</option>
+                <option value="lentil">{language === 'hi' ? '🫛 मसूर (Lentil)' : '🫛 Lentil'}</option>
+                <option value="groundnut">{language === 'hi' ? '🥜 मूंगफली (Groundnut)' : '🥜 Groundnut/Peanut'}</option>
+                <option value="mustard">{language === 'hi' ? '🌼 सरसों (Mustard)' : '🌼 Mustard'}</option>
+                <option value="potato">{language === 'hi' ? '🥔 आलू (Potato)' : '🥔 Potato'}</option>
+                <option value="onion">{language === 'hi' ? '🧅 प्याज (Onion)' : '🧅 Onion'}</option>
+                <option value="tomato">{language === 'hi' ? '🍅 टमाटर (Tomato)' : '🍅 Tomato'}</option>
+                <option value="chili">{language === 'hi' ? '🌶️ मिर्च (Chili)' : '🌶️ Chili/Pepper'}</option>
+                <option value="millet">{language === 'hi' ? '🌾 बाजरा (Millet)' : '🌾 Pearl Millet/Bajra'}</option>
+                <option value="sorghum">{language === 'hi' ? '🌾 ज्वार (Sorghum)' : '🌾 Sorghum/Jowar'}</option>
+                <option value="tea">{language === 'hi' ? '🍵 चाय (Tea)' : '🍵 Tea'}</option>
+                <option value="coffee">{language === 'hi' ? '☕ कॉफी (Coffee)' : '☕ Coffee'}</option>
+                <option value="banana">{language === 'hi' ? '🍌 केला (Banana)' : '🍌 Banana'}</option>
+                <option value="mango">{language === 'hi' ? '🥭 आम (Mango)' : '🥭 Mango'}</option>
               </select>
             </div>
 
             {/* Crop Stage and Field Area */}
             <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">
-                {language === 'hi' ? 'फसल चरण और क्षेत्र' : 'Crop Stage & Field Area'}
+                {language === 'hi' ? 'फसल का चरण और एरिया' : 'Crop Stage & Field Area'}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs sm:text-sm text-gray-600 mb-2">
-                    {language === 'hi' ? 'फसल चरण' : 'Crop Stage'}
+                    {language === 'hi' ? 'फसल का चरण' : 'Crop Stage'}
                   </label>
                   <select
                     value={cropStage}
@@ -582,16 +675,19 @@ const AIAnalysis = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="">{language === 'hi' ? 'चुनें' : 'Select'}</option>
-                    <option value="seedling">{language === 'hi' ? 'अंकुरण' : 'Seedling'}</option>
-                    <option value="vegetative">{language === 'hi' ? 'वृद्धि' : 'Vegetative'}</option>
-                    <option value="flowering">{language === 'hi' ? 'फूल आना' : 'Flowering'}</option>
-                    <option value="fruiting">{language === 'hi' ? 'फल लगना' : 'Fruiting'}</option>
-                    <option value="maturity">{language === 'hi' ? 'परिपक्वता' : 'Maturity'}</option>
+                    <option value="sowing">{language === 'hi' ? '🌱 बुवाई (Sowing)' : '🌱 Sowing'}</option>
+                    <option value="germination">{language === 'hi' ? '🌾 अंकुरण (Germination)' : '🌾 Germination'}</option>
+                    <option value="tillering">{language === 'hi' ? '🌿 कल्ले फूटना (Tillering)' : '🌿 Tillering'}</option>
+                    <option value="vegetative">{language === 'hi' ? '🍃 बढ़ोतरी (Growth)' : '🍃 Vegetative Growth'}</option>
+                    <option value="flowering">{language === 'hi' ? '🌸 फूल आना (Flowering)' : '🌸 Flowering'}</option>
+                    <option value="grain-filling">{language === 'hi' ? '🌾 दाना भरना (Grain Filling)' : '🌾 Grain Filling'}</option>
+                    <option value="ripening">{language === 'hi' ? '🌾 पकना (Ripening)' : '🌾 Ripening'}</option>
+                    <option value="harvesting">{language === 'hi' ? '🚜 कटाई (Harvesting)' : '🚜 Harvesting'}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm text-gray-600 mb-2">
-                    {language === 'hi' ? 'क्षेत्र (हेक्टेयर)' : 'Field Area (ha)'}
+                    {language === 'hi' ? 'खेत का एरिया (हेक्टेयर)' : 'Field Area (ha)'}
                   </label>
                   <input
                     type="number"
@@ -653,32 +749,26 @@ const AIAnalysis = () => {
             <div className="flex items-center justify-between gap-3 mb-4">
               <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
                 <span>🤖</span>
-                <span>{language === 'hi' ? 'एआई विश्लेषण' : 'AI Analysis'}</span>
+                <span>{language === 'hi' ? 'AI जांच' : 'AI Analysis'}</span>
               </h3>
               {Number.isFinite(Number(aiResult?.confidence)) && (
                 <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-                  {`${Math.round(Math.max(0, Math.min(1, Number(aiResult.confidence))) * 100)}% ${language === 'hi' ? 'विश्वास' : 'confidence'}`}
+                  {`${Math.round(Math.max(0, Math.min(1, Number(aiResult.confidence))) * 100)}% ${language === 'hi' ? 'भरोसा' : 'confidence'}`}
                 </span>
               )}
             </div>
 
             {aiLoading && (
               <p className="text-sm sm:text-base text-gray-600">
-                {language === 'hi' ? 'कृपया प्रतीक्षा करें, एआई सुझाव तैयार कर रहा है...' : 'Please wait while the AI prepares recommendations...'}
+                {language === 'hi' ? 'रुकिए, AI सुझाव तैयार कर रहा है...' : 'Please wait while the AI prepares recommendations...'}
               </p>
-            )}
-
-            {!aiLoading && aiError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm sm:text-base">
-                {aiError}
-              </div>
             )}
 
             {!aiLoading && aiResult && (
               <div className="bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-300 rounded-xl shadow-lg p-6">
                 <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 flex items-center">
                   <span className="mr-2">🌾</span>
-                  {language === 'hi' ? 'AI सिफारिश' : 'AI Recommendation'}
+                  {language === 'hi' ? 'AI सुझाव' : 'AI Recommendation'}
                 </h3>
                 <div className="prose prose-sm sm:prose max-w-none">
                   <p className="text-sm sm:text-base text-gray-800 leading-relaxed whitespace-pre-wrap">
@@ -706,7 +796,7 @@ const AIAnalysis = () => {
                 {/* Query Answer */}
                 {aiResult.query_answer && (
                   <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg text-sm sm:text-base">
-                    <strong>{language === 'hi' ? '💬 आपके प्रश्न का उत्तर:' : '💬 Answer:'}</strong>
+                    <strong>{language === 'hi' ? '💬 आपके सवाल का जवाब:' : '💬 Answer:'}</strong>
                     <p className="mt-1">{aiResult.query_answer}</p>
                   </div>
                 )}
@@ -715,7 +805,7 @@ const AIAnalysis = () => {
                 {Array.isArray(aiResult.immediate_actions) && aiResult.immediate_actions.length > 0 && (
                   <div>
                     <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? '🎯 तुरंत करें' : '🎯 Immediate Actions'}
+                      {language === 'hi' ? '🎯 जल्दी करें' : '🎯 Immediate Actions'}
                     </h4>
                     <div className="space-y-2">
                       {aiResult.immediate_actions.map((item, idx) => (
@@ -740,7 +830,7 @@ const AIAnalysis = () => {
                 {Array.isArray(aiResult.warnings) && aiResult.warnings.length > 0 && (
                   <div>
                     <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? '⚠️ चेतावनियाँ' : '⚠️ Warnings'}
+                      {language === 'hi' ? '⚠️ सावधानी' : '⚠️ Warnings'}
                     </h4>
                     <div className="space-y-2">
                       {aiResult.warnings.map((item, idx) => (
@@ -764,24 +854,24 @@ const AIAnalysis = () => {
                 {aiResult.analysis && (
                   <div>
                     <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? '📊 विश्लेषण' : '📊 Analysis'}
+                      {language === 'hi' ? '📊 जांच' : '📊 Analysis'}
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {aiResult.analysis.crop_health && (
                         <div className="bg-green-50 rounded-lg p-3">
-                          <p className="text-xs uppercase text-green-600 tracking-wide mb-1">{language === 'hi' ? 'फसल स्वास्थ्य' : 'Crop Health'}</p>
+                          <p className="text-xs uppercase text-green-600 tracking-wide mb-1">{language === 'hi' ? 'फसल की सेहत' : 'Crop Health'}</p>
                           <p className="text-sm font-semibold text-green-800">{aiResult.analysis.crop_health}</p>
                         </div>
                       )}
                       {aiResult.analysis.moisture_status && (
                         <div className="bg-blue-50 rounded-lg p-3">
-                          <p className="text-xs uppercase text-blue-600 tracking-wide mb-1">{language === 'hi' ? 'नमी स्थिति' : 'Moisture'}</p>
+                          <p className="text-xs uppercase text-blue-600 tracking-wide mb-1">{language === 'hi' ? 'नमी' : 'Moisture'}</p>
                           <p className="text-sm font-semibold text-blue-800">{aiResult.analysis.moisture_status}</p>
                         </div>
                       )}
                       {aiResult.analysis.nutrient_status && (
                         <div className="bg-amber-50 rounded-lg p-3">
-                          <p className="text-xs uppercase text-amber-600 tracking-wide mb-1">{language === 'hi' ? 'पोषक तत्व' : 'Nutrients'}</p>
+                          <p className="text-xs uppercase text-amber-600 tracking-wide mb-1">{language === 'hi' ? 'खाद' : 'Nutrients'}</p>
                           <p className="text-sm font-semibold text-amber-800">{aiResult.analysis.nutrient_status}</p>
                         </div>
                       )}
@@ -874,10 +964,60 @@ const AIAnalysis = () => {
         )}
       </div>
 
-      {/* Help Button */}
-      <button className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-gray-800 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors duration-200 active:scale-95">
-        <span className="text-xl sm:text-2xl">{t('help')}</span>
-      </button>
+      {/* Error/Success Popup */}
+      {(showErrorPopup && aiError) || errorPopup.show ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-slideUp">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                {errorPopup.type === 'success' ? (
+                  <svg className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {errorPopup.message || aiError}
+                </h3>
+                {errorPopup.solution && (
+                  <p className="text-gray-600 text-sm mt-1">
+                    💡 {errorPopup.solution}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setShowErrorPopup(false);
+                  setAiError('');
+                  setErrorPopup({ show: false, message: '', solution: '' });
+                }}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mt-4">
+              <button
+                onClick={() => {
+                  setShowErrorPopup(false);
+                  setAiError('');
+                  setErrorPopup({ show: false, message: '', solution: '' });
+                }}
+                className={`w-full ${errorPopup.type === 'success' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white font-medium py-2 px-4 rounded-lg transition-colors`}
+              >
+                {language === 'hi' ? 'ठीक है' : 'OK'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
