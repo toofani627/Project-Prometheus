@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// Language Context for bilingual support (English & Hindi)
+// Language Context for multilingual support (English, Hindi & Tamil)
 const LanguageContext = createContext();
 
 // All translations for the entire application
@@ -10,6 +10,7 @@ const translations = {
     selectLanguage: 'Select Language',
     english: 'English',
     hindi: 'हिन्दी',
+    tamil: 'தமிழ்',
     
     // Main Menu
     mainMenu: 'Main Menu',
@@ -135,6 +136,72 @@ const translations = {
     // Help
     help: '?',
   },
+  ta: {
+    // Language Selection
+    selectLanguage: 'மொழியைத் தேர்ந்தெடுக்கவும்',
+    english: 'English',
+    hindi: 'हिन्दी',
+    tamil: 'தமிழ்',
+    
+    // Main Menu
+    mainMenu: 'பிரதான மெனு',
+    deviceControl: 'சாதன கட்டுப்பாடு',
+    deviceControlDesc: 'இணைக்கப்பட்ட IoT சாதனங்களைப் பார்க்கவும் கட்டுப்படுத்தவும்',
+    aiAnalysis: 'AI பகுப்பாய்வு',
+    aiAnalysisDesc: 'AI உதவியுடன் வயல் தரவைப் பார்க்கவும்',
+    backToMenu: '← மெனுவுக்குத் திரும்பு',
+    
+    // Device Control
+    enterIP: 'சாதன IP முகவரியை உள்ளிடவும்',
+    ipPlaceholder: 'எ.கா: 192.168.1.100',
+    connect: 'இணைக்கவும்',
+    cancel: 'ரத்து செய்',
+    
+    // AI Analysis Dashboard
+    aiAnalysisDashboard: 'AI பகுப்பாய்வு டாஷ்போர்டு',
+    deviceInformation: 'சாதன தகவல்',
+    environmentalData: 'வயல் தரவு',
+    device: 'சாதனம்',
+    temperature: 'வெப்பநிலை (°C)',
+    humidity: 'ஈரப்பதம் (%)',
+    soil: 'மண் ஈரப்பதம் (%)',
+    light: 'ஒளி',
+    gps: 'இடம்',
+    timestamp: 'நேரம்',
+    
+    // Buttons
+    getData: 'தரவைப் பெறவும்',
+    exportJSON: 'JSON சேமிக்கவும்',
+    clearData: 'தரவை அழிக்கவும்',
+    runAIAnalysis: 'AI பகுப்பாய்வு செய்யவும்',
+    
+    // Status Log
+    statusLog: 'நிலை',
+    successfullyFetched: '✓ 3 சாதனங்களிலிருந்து தரவு பெறப்பட்டது',
+    dataUpdated: '📊 தரவு புதுப்பிக்கப்பட்டது',
+    readyForAnalysis: '→ AI பகுப்பாய்வுக்கு தயார்',
+    noDataAvailable: 'தரவு இல்லை. "தரவைப் பெறவும்" பொத்தானை அழுத்தவும்.',
+    
+    // Crop Selection
+    selectCropType: 'பயிரைத் தேர்ந்தெடுக்கவும்',
+    chooseCrop: 'பயிரைத் தேர்ந்தெடுக்கவும்...',
+    wheat: 'கோதுமை',
+    rice: 'நெல்',
+    maize: 'சோளம்',
+    sugarcane: 'கரும்பு',
+    cotton: 'பருத்தி',
+    
+    // pH Scale
+    soilPHScale: 'மண் pH அளவு',
+    phNote: 'pH - அமிலம் (சிவப்பு) முதல் நடுநிலை (பச்சை) முதல் காரம் (நீலம்)',
+    
+    // Additional Query
+    additionalQuery: 'கூடுதல் கேள்வி',
+    queryPlaceholder: 'பயிர் அல்லது வானிலை பற்றி ஏதேனும் கேள்விகளை எழுதவும்...',
+    
+    // Help
+    help: '?',
+  },
 };
 
 export const LanguageProvider = ({ children }) => {
@@ -152,8 +219,8 @@ export const LanguageProvider = ({ children }) => {
     }
     
     const savedLanguage = localStorage.getItem('language');
-    // Only return saved language if it's valid ('en' or 'hi'), otherwise return null
-    return (savedLanguage === 'en' || savedLanguage === 'hi') ? savedLanguage : null;
+    // Only return saved language if it's valid ('en', 'hi', or 'ta'), otherwise return null
+    return (savedLanguage === 'en' || savedLanguage === 'hi' || savedLanguage === 'ta') ? savedLanguage : null;
   });
 
   // Save language preference to localStorage whenever it changes

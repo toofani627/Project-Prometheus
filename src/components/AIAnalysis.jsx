@@ -433,7 +433,7 @@ const AIAnalysis = () => {
             onClick={handleLanguageSwitch}
             className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-xs sm:text-sm whitespace-nowrap"
           >
-            हिंदी/En
+            {language === 'en' ? 'हिं/த' : language === 'hi' ? 'En/த' : 'En/हिं'}
           </button>
         </div>
       </div>
@@ -673,15 +673,15 @@ const AIAnalysis = () => {
                     onChange={(e) => setCropStage(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   >
-                    <option value="">{language === 'hi' ? 'चुनें' : 'Select'}</option>
-                    <option value="sowing">{language === 'hi' ? '🌱 बुवाई (Sowing)' : '🌱 Sowing'}</option>
-                    <option value="germination">{language === 'hi' ? '🌾 अंकुरण (Germination)' : '🌾 Germination'}</option>
-                    <option value="tillering">{language === 'hi' ? '🌿 कल्ले फूटना (Tillering)' : '🌿 Tillering'}</option>
-                    <option value="vegetative">{language === 'hi' ? '🍃 बढ़ोतरी (Growth)' : '🍃 Vegetative Growth'}</option>
-                    <option value="flowering">{language === 'hi' ? '🌸 फूल आना (Flowering)' : '🌸 Flowering'}</option>
-                    <option value="grain-filling">{language === 'hi' ? '🌾 दाना भरना (Grain Filling)' : '🌾 Grain Filling'}</option>
-                    <option value="ripening">{language === 'hi' ? '🌾 पकना (Ripening)' : '🌾 Ripening'}</option>
-                    <option value="harvesting">{language === 'hi' ? '🚜 कटाई (Harvesting)' : '🚜 Harvesting'}</option>
+                    <option value="">{language === 'hi' ? 'चुनें' : language === 'ta' ? 'தேர்ந்தெடுக்கவும்' : 'Select'}</option>
+                    <option value="sowing">{language === 'hi' ? '🌱 बुवाई (Sowing)' : language === 'ta' ? '🌱 விதைத்தல்' : '🌱 Sowing'}</option>
+                    <option value="germination">{language === 'hi' ? '🌾 अंकुरण (Germination)' : language === 'ta' ? '🌾 முளைத்தல்' : '🌾 Germination'}</option>
+                    <option value="tillering">{language === 'hi' ? '🌿 कल्ले फूटना (Tillering)' : language === 'ta' ? '🌿 கிளை பிரித்தல்' : '🌿 Tillering'}</option>
+                    <option value="vegetative">{language === 'hi' ? '🍃 बढ़ोतरी (Growth)' : language === 'ta' ? '🍃 வளர்ச்சி' : '🍃 Vegetative Growth'}</option>
+                    <option value="flowering">{language === 'hi' ? '🌸 फूल आना (Flowering)' : language === 'ta' ? '🌸 பூக்கும் நிலை' : '🌸 Flowering'}</option>
+                    <option value="grain-filling">{language === 'hi' ? '🌾 दाना भरना (Grain Filling)' : language === 'ta' ? '🌾 தானியம் நிரம்புதல்' : '🌾 Grain Filling'}</option>
+                    <option value="ripening">{language === 'hi' ? '🌾 पकना (Ripening)' : language === 'ta' ? '🌾 பழுத்தல்' : '🌾 Ripening'}</option>
+                    <option value="harvesting">{language === 'hi' ? '🚜 कटाई (Harvesting)' : language === 'ta' ? '🚜 அறுவடை' : '🚜 Harvesting'}</option>
                   </select>
                 </div>
                 <div>

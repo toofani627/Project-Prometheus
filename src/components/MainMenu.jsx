@@ -67,7 +67,9 @@ const MainMenu = () => {
             onClick={handleLanguageSwitch}
             className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
           >
-            <span className="hidden xs:inline">{language === 'en' ? '🌐 हिन्दी' : '🌐 English'}</span>
+            <span className="hidden xs:inline">
+              {language === 'en' ? '🌐 हिन्दी / தமிழ்' : language === 'hi' ? '🌐 English / தமிழ்' : '🌐 English / हिन्दी'}
+            </span>
             <span className="xs:hidden">🌐</span>
           </button>
         </div>

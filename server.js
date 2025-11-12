@@ -20,6 +20,7 @@ const azureAiApiVersion = process.env.AZURE_PHI4_API_VERSION || "2024-05-01-prev
 
 const buildAgriSystemPrompt = (language) => {
   const isHindi = language === "hi";
+  const isTamil = language === "ta";
 
   return `You are an advanced Agricultural Intelligence Assistant for Indian farmers.
 
@@ -68,6 +69,19 @@ ${isHindi ? `
 Example (Hindi):
 "आपकी मक्का की फसल स्वस्थ है लेकिन मिट्टी थोड़ी सूखी है। आज 4 लीटर पानी प्रति वर्ग मीटर दें। अगले दो दिन बारिश नहीं है इसलिए हल्की सिंचाई रखें। अगर पत्ते पीले हों तो डीएपी खाद डालने पर विचार करें।"
 
+` : isTamil ? `
+🚨 CRITICAL: RESPOND IN TAMIL ONLY 🚨
+- Language: தமிழ் (Tamil script)
+- Use natural Tamil words (வயல், பயிர், உரம், தண்ணீர், மண், நோய்)
+- Numbers can be digits, but text must be Tamil only
+- ✅ ALWAYS mention water quantity in L/m² (e.g., "3 லிட்டர் தண்ணீர் ஒரு சதுர மீட்டருக்கு")
+- ✅ Suggest only fertilizer NAME if needed (எ.கா யூரியா, டிஏபி, தொழு உரம், வேப்ப எண்ணெய்)
+- ❌ NEVER mention fertilizer quantity (no "50 கிலோ" or "25 கிலோ")
+- Do not mix any English or Hindi
+
+Example (Tamil):
+"உங்கள் சோள பயிர் ஆரோக்கியமாக உள்ளது ஆனால் மண் சற்று வறண்டுள்ளது. இன்று 4 லிட்டர் தண்ணீர் ஒரு சதுர மீட்டருக்கு கொடுக்கவும். அடுத்த இரண்டு நாட்களுக்கு மழை இல்லை என்பதால் லேசான பாசனம் வைக்கவும். இலைகள் மஞ்சள் நிறமாக மாறினால் டிஏபி உரம் பயன்படுத்த பரிசீலிக்கவும்."
+
 ` : `
 🚨 CRITICAL: RESPOND IN ENGLISH ONLY 🚨
 - Language: English only
@@ -108,6 +122,7 @@ const buildAgritechMessages = ({ telemetry, weather, cropType, cropStage, fieldA
   // Determine language and create appropriate prompt
   const selectedLanguage = language || 'en';
   const isHindi = selectedLanguage === 'hi';
+  const isTamil = selectedLanguage === 'ta';
   
   const userPrompt = `Location: ${telemetry?.latitude || 0}, ${telemetry?.longitude || 0}
 Crop: ${cropType || 'unknown'} | Stage: ${cropStage || 'unknown'} | Area: ${fieldArea || 'N/A'} hectares
@@ -116,8 +131,8 @@ Weather Past 5 Days (min,max,rain,wind): ${past5Array || 'No data'}
 Weather Next 5 Days (min,max,rain,wind): ${next5Array || 'No data'}
 ${additionalQuery ? `Farmer Question: ${additionalQuery}` : ''}
 
-🚨 RESPOND IN ${isHindi ? 'HINDI (हिन्दी) ONLY' : 'ENGLISH ONLY'} 🚨
-${isHindi ? 'हिन्दी में जवाब दें - सभी शब्द हिन्दी में' : 'Respond in English - all words in English'}`;
+🚨 RESPOND IN ${isHindi ? 'HINDI (हिन्दी) ONLY' : isTamil ? 'TAMIL (தமிழ்) ONLY' : 'ENGLISH ONLY'} 🚨
+${isHindi ? 'हिन्दी में जवाब दें - सभी शब्द हिन्दी में' : isTamil ? 'தமிழில் பதில் அளிக்கவும் - அனைத்து வார்த்தைகளும் தமிழில்' : 'Respond in English - all words in English'}`;
 
   return [
     {
@@ -590,7 +605,7 @@ app.post("/api/ai/analyze", async (req, res) => {
 
     // Ensure language is properly set
     const selectedLanguage = lang || 'en';
-    console.log(`🔤 Selected Language: "${selectedLanguage}" → ${selectedLanguage === 'hi' ? '🇮🇳 HINDI (हिन्दी)' : '🇬🇧 ENGLISH'}`);
+    console.log(`🔤 Selected Language: "${selectedLanguage}" → ${selectedLanguage === 'hi' ? '🇮🇳 HINDI (हिन्दी)' : selectedLanguage === 'ta' ? '🇮🇳 TAMIL (தமிழ்)' : '🇬🇧 ENGLISH'}`);
     
     if (soilPH) {
       console.log(`🧪 Manual pH selected: ${soilPH}`);
@@ -607,7 +622,7 @@ app.post("/api/ai/analyze", async (req, res) => {
       additionalQuery
     });
     
-    console.log(`📝 AI Prompt created with language: ${selectedLanguage === 'hi' ? 'Hindi (हिन्दी)' : 'English'}`);
+    console.log(`📝 AI Prompt created with language: ${selectedLanguage === 'hi' ? 'Hindi (हिन्दी)' : selectedLanguage === 'ta' ? 'Tamil (தமிழ்)' : 'English'}`);
     console.log(`📋 System Prompt Preview: ${messages[0].content.substring(0, 150)}...`);
     console.log(`📋 User Prompt Preview: ${messages[1].content.substring(0, 150)}...`);
 

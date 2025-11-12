@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
  * LanguageSelect Component
  * 
  * This is the first screen users see on app load.
- * Allows users to select between English and Hindi.
+ * Allows users to select between English, Hindi, and Tamil.
  * The selection is stored in localStorage and affects all UI text throughout the app.
  */
 const LanguageSelect = () => {
@@ -17,7 +17,7 @@ const LanguageSelect = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
-      <div className="text-center max-w-2xl w-full">
+      <div className="text-center max-w-3xl w-full">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-8 sm:mb-12">
           Select Language
         </h1>
@@ -36,6 +36,14 @@ const LanguageSelect = () => {
             className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold py-5 sm:py-6 px-10 sm:px-12 rounded-xl text-lg sm:text-xl transition-all duration-200 transform hover:scale-105 shadow-lg active:scale-95"
           >
             हिन्दी
+          </button>
+          
+          {/* Tamil Button */}
+          <button
+            onClick={() => handleLanguageSelect('ta')}
+            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold py-5 sm:py-6 px-10 sm:px-12 rounded-xl text-lg sm:text-xl transition-all duration-200 transform hover:scale-105 shadow-lg active:scale-95"
+          >
+            தமிழ்
           </button>
         </div>
       </div>
