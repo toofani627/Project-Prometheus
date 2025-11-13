@@ -50,14 +50,14 @@ const AppContent = () => {
     return <LanguageSelect />;
   }
 
-  // Once language is selected, show main app with routing
+  // Once language is selected, redirect directly to AI Analysis
   return (
     <Router>
       <DeviceIPHandler>
         <Routes>
-          <Route path="/" element={<MainMenu />} />
+          <Route path="/" element={<Navigate to="/ai-analysis" replace />} />
           <Route path="/ai-analysis" element={<AIAnalysis />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/ai-analysis" replace />} />
         </Routes>
       </DeviceIPHandler>
     </Router>

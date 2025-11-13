@@ -419,13 +419,7 @@ const AIAnalysis = () => {
       {/* Header */}
       <div className="bg-white shadow-sm py-3 sm:py-4 px-4 sm:px-6">
         <div className="container mx-auto flex items-center justify-between gap-2">
-          <button
-            onClick={() => navigate('/')}
-            className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 sm:gap-2 text-sm sm:text-base whitespace-nowrap"
-          >
-            <span>←</span>
-            <span className="hidden xs:inline">{t('backToMenu')}</span>
-          </button>
+          <div className="w-24 sm:w-32"></div> {/* Spacer for centering */}
           <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-800 text-center flex-1 px-2">
             {t('aiAnalysisDashboard')}
           </h1>
