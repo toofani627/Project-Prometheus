@@ -27,38 +27,12 @@ const AIAnalysis = () => {
 
   const handleLanguageSwitch = () => {
     // Clear language to show selection screen again
-    localStorage.removeItem('language');
     changeLanguage(null);
+    localStorage.removeItem('language');
   };
   
-  // Device data state with example data
-  const [devices, setDevices] = useState([
-    {
-      id: 'ESP_6853',
-      temperature: 28.5,
-      humidity: 65,
-      soil: 42,
-      soilTemp: 24.8,
-      pH: 6.8,
-      light: 750,
-      gps: '23.5, 77.0',
-      timestamp: new Date().toLocaleString(),
-      raw: {
-        device: 'ESP_6853',
-        temperature: 28.5,
-        humidity: 65,
-        soilMoisture: 42,
-        soilTemperature: 24.8,
-        soilMoistureRaw: 850,
-        pH: 6.8,
-        lightLevel: 750,
-        lightStatus: 'Bright',
-        latitude: 23.5,
-        longitude: 77.0,
-        timestamp: new Date().toISOString()
-      }
-    }
-  ]);
+  // Device data state
+  const [devices, setDevices] = useState([]);
 
   const [selectedCrop, setSelectedCrop] = useState('');
   const [cropStage, setCropStage] = useState('');

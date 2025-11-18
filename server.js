@@ -27,7 +27,7 @@ const buildAgriSystemPrompt = (language) => {
 Your task is to analyze field sensor data, weather, and crop details to give short, realistic, and practical advice under 100 words. Use clear, friendly, farmer-style language — not technical explanations.
 
 ### You will receive:
-- Field sensors: air temperature, humidity, soil moisture, light (LDR), soil pH, and time
+- Field sensors: air temperature, humidity, soil moisture, soil temperature, light (LDR), soil pH, and time
 - GPS location: helps determine climate and soil
 - Crop: name, growth stage, and area (with unit, e.g., m² or acres)
 - Weather: past 5 days + next 5 days forecast (temperature, rainfall, wind)
@@ -35,14 +35,16 @@ Your task is to analyze field sensor data, weather, and crop details to give sho
 - Farmer query: optional question from farmer
 
 ### Response Logic:
-1. If the farmer asked a query, answer that first  
-2. Then describe the crop's current health or issue (good / caution / critical)  
-3. Suggest 2–3 simple, practical actions with clear timing  
-4. **ALWAYS recommend water quantity in litres per square meter (L/m²)** with specific amount
-5. Mention only **fertilizer type/name** (Urea, DAP, SSP, MOP, compost, neem spray) if needed
-6. **NEVER mention fertilizer quantity, weight, or amount** (no kg, no grams, no measurements)
-7. Adjust irrigation or protection based on upcoming weather  
-8. Use same unit of area as input when referring to the field  
+1. **Analyze all sensor data (including air temp, soil temp, humidity, moisture, pH, light) to assess crop health**
+2. If the farmer asked a query, answer that first  
+3. Then describe the crop's current health or issue (good / caution / critical)  
+4. Suggest 2–3 simple, practical actions with clear timing  
+5. **ALWAYS recommend water quantity in litres per square meter (L/m²)** with specific amount
+6. Mention only **fertilizer type/name** (Urea, DAP, SSP, MOP, compost, neem spray) if needed
+7. **NEVER mention fertilizer quantity, weight, or amount** (no kg, no grams, no measurements)
+8. Adjust irrigation or protection based on upcoming weather  
+9. Use same unit of area as input when referring to the field
+10. **DO NOT explicitly mention temperature readings in your response** - use them internally for analysis only  
 
 ### Critical Rules:
 - ✅ **DO give water quantity:** "apply 4 litres per square meter"
@@ -117,7 +119,7 @@ const buildAgritechMessages = ({ telemetry, weather, cropType, cropStage, fieldA
   const phValue = soilPH || telemetry?.pH || 'N/A';
   
   // Sensor data as arrays
-  const sensorData = `pH=${phValue}, Moisture=${telemetry?.soilMoisture || 'N/A'}%, Temp=${telemetry?.temperature || 'N/A'}°C, Humidity=${telemetry?.humidity || 'N/A'}%, Light=${telemetry?.lightLevel || 'N/A'}lux`;
+  const sensorData = `pH=${phValue}, Moisture=${telemetry?.soilMoisture || 'N/A'}%, SoilTemp=${telemetry?.soilTemperature || 'N/A'}°C, AirTemp=${telemetry?.temperature || 'N/A'}°C, Humidity=${telemetry?.humidity || 'N/A'}%, Light=${telemetry?.lightLevel || 'N/A'}lux`;
 
   // Determine language and create appropriate prompt
   const selectedLanguage = language || 'en';
@@ -157,7 +159,7 @@ const connectedDevices = new Map();
 
 // WebSocket connection handler
 wss.on('connection', (ws, req) => {
-  console.log('📱 New WebSocket connection established');
+  console.log('New WebSocket connection established');
   let deviceId = null;
 
   ws.on('message', (message) => {
@@ -186,7 +188,7 @@ wss.on('connection', (ws, req) => {
         if (deviceInfo) {
           deviceInfo.data = data;
           deviceInfo.lastUpdate = Date.now();
-          console.log(`📊 Data received from ${deviceId}:`, {
+          console.log(`Data received from ${deviceId}:`, {
             temp: data.temperature,
             humidity: data.humidity,
             soil: data.soilMoisture
@@ -214,7 +216,7 @@ wss.on('connection', (ws, req) => {
       if (device) {
         device.connected = false;
       }
-      console.log(`📴 Device disconnected: ${deviceId}`);
+      console.log(`Device disconnected: ${deviceId}`);
     }
   });
 
@@ -226,10 +228,11 @@ wss.on('connection', (ws, req) => {
 // Middleware to parse JSON
 app.use(express.json());
 
-// Serve static assets from the dist directory (Vite build output)
-app.use(express.static(path.join(__dirname, "dist")));
+// ========================================
+// API ROUTES (MUST BE BEFORE STATIC FILES)
+// ========================================
 
-// API routes can be added here
+// Test endpoint
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello from your Azure-backed Node API!" });
 });
@@ -297,7 +300,7 @@ app.post("/api/request-data", (req, res) => {
       timestamp: Date.now()
     }));
     
-    console.log(`📤 Sent READ_SENSORS command to ${deviceId}`);
+    console.log(`Sent READ_SENSORS command to ${deviceId}`);
     
     res.json({ 
       success: true,
@@ -429,8 +432,8 @@ const callAgritechModel = async (messages) => {
   }
   url += `?api-version=${azureAiApiVersion}`;
 
-  console.log('🤖 Calling Azure AI model...');
-  console.log(`📤 Request: ${messages.length} messages, user prompt length: ${messages[messages.length-1]?.content?.length || 0}`);
+  console.log('Calling Azure AI model...');
+  console.log(`Request: ${messages.length} messages, user prompt length: ${messages[messages.length-1]?.content?.length || 0}`);
 
   // Add 30-second timeout to prevent hanging requests
   const controller = new AbortController();
@@ -460,7 +463,7 @@ const callAgritechModel = async (messages) => {
     }
 
     const result = await response.json();
-    console.log('📥 Azure AI raw response structure:', JSON.stringify(result, null, 2).substring(0, 500));
+    console.log('Azure AI raw response structure:', JSON.stringify(result, null, 2).substring(0, 500));
     
     const directContent = result?.output?.[0]?.content?.[0]?.text || result?.choices?.[0]?.message?.content;
 
@@ -507,7 +510,7 @@ const fetchWeatherData = async (latitude, longitude) => {
 
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&start_date=${startDate}&end_date=${endDate}&timezone=auto`;
 
-  console.log(`🌦️  Fetching weather for (${latitude}, ${longitude})`);
+  console.log(`Fetching weather for (${latitude}, ${longitude})`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -552,7 +555,7 @@ const fetchWeatherData = async (latitude, longitude) => {
 };
 
 app.post("/api/ai/analyze", async (req, res) => {
-  console.log('\n🌾 === AI Analysis Started ===');
+  console.log('\n=== AI Analysis Started ===');
   
   try {
     const {
@@ -568,7 +571,8 @@ app.post("/api/ai/analyze", async (req, res) => {
     } = req.body || {};
 
     // Log language preference
-    console.log(`🌐 Language: ${lang || 'en'} (${lang === 'hi' ? 'Hindi' : 'English'})`);
+    const langMap = { 'hi': 'Hindi', 'ta': 'Tamil', 'en': 'English' };
+    console.log(`Language: ${lang || 'en'} (${langMap[lang] || 'English'})`);
 
     let telemetry = telemetryOverride;
     const resolvedDeviceId = deviceId || telemetry?.device || telemetry?.deviceId || telemetry?.deviceID || "";
@@ -593,7 +597,7 @@ app.post("/api/ai/analyze", async (req, res) => {
     const lat = toNumberOrNull(telemetry?.latitude);
     const lon = toNumberOrNull(telemetry?.longitude);
     
-    console.log(`📍 Coordinates: lat=${lat}, lon=${lon}`);
+    console.log(`Coordinates: lat=${lat}, lon=${lon}`);
 
     try {
       weatherData = await fetchWeatherData(lat, lon);
@@ -605,10 +609,11 @@ app.post("/api/ai/analyze", async (req, res) => {
 
     // Ensure language is properly set
     const selectedLanguage = lang || 'en';
-    console.log(`🔤 Selected Language: "${selectedLanguage}" → ${selectedLanguage === 'hi' ? '🇮🇳 HINDI (हिन्दी)' : selectedLanguage === 'ta' ? '🇮🇳 TAMIL (தமிழ்)' : '🇬🇧 ENGLISH'}`);
+    const langDisplay = { 'hi': 'HINDI', 'ta': 'TAMIL', 'en': 'ENGLISH' };
+    console.log(`Selected Language: "${selectedLanguage}" -> ${langDisplay[selectedLanguage] || 'ENGLISH'}`);
     
     if (soilPH) {
-      console.log(`🧪 Manual pH selected: ${soilPH}`);
+      console.log(`Manual pH selected: ${soilPH}`);
     }
     
     const messages = buildAgritechMessages({
@@ -622,14 +627,14 @@ app.post("/api/ai/analyze", async (req, res) => {
       additionalQuery
     });
     
-    console.log(`📝 AI Prompt created with language: ${selectedLanguage === 'hi' ? 'Hindi (हिन्दी)' : selectedLanguage === 'ta' ? 'Tamil (தமிழ்)' : 'English'}`);
-    console.log(`📋 System Prompt Preview: ${messages[0].content.substring(0, 150)}...`);
-    console.log(`📋 User Prompt Preview: ${messages[1].content.substring(0, 150)}...`);
+    console.log(`AI Prompt created with language: ${langDisplay[selectedLanguage] || 'English'}`);
+    console.log(`System Prompt Preview: ${messages[0].content.substring(0, 150)}...`);
+    console.log(`User Prompt Preview: ${messages[1].content.substring(0, 150)}...`);
 
     const aiResult = await callAgritechModel(messages);
     
-    console.log(`✅ AI Response received (length: ${aiResult.text?.length || 0} chars)`);
-    console.log(`📝 Preview: ${aiResult.text?.substring(0, 100)}...`);
+    console.log(`AI Response received (length: ${aiResult.text?.length || 0} chars)`);
+    console.log(`Preview: ${aiResult.text?.substring(0, 100)}...`);
 
     res.json({
       success: true,
@@ -643,7 +648,7 @@ app.post("/api/ai/analyze", async (req, res) => {
       }
     });
     
-    console.log('✅ === AI Analysis Completed ===\n');
+    console.log('=== AI Analysis Completed ===\n');
   } catch (error) {
     console.error("❌ AI analysis error:", error);
     console.error("Error stack:", error.stack);
@@ -660,6 +665,13 @@ app.post("/api/ai/analyze", async (req, res) => {
   }
 });
 
+// ========================================
+// STATIC FILES (MUST BE AFTER API ROUTES)
+// ========================================
+
+// Serve static assets from the dist directory (Vite build output)
+app.use(express.static(path.join(__dirname, "dist")));
+
 // Support client-side routing by returning index.html for all other routes
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
@@ -667,6 +679,6 @@ app.get("*", (req, res) => {
 
 // Start server with WebSocket support
 server.listen(port, () => {
-  console.log(`🚀 Server running on port ${port}`);
-  console.log(`📡 WebSocket server ready for device connections`);
+  console.log(`Server running on port ${port}`);
+  console.log(`WebSocket server ready for device connections`);
 });
