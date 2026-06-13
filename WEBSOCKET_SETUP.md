@@ -1,323 +1,168 @@
-# WebSocket Setup Guide - Bidirectional Communication
+# WebSocket Setup Guide — ESP32
 
-## 🎯 **What Was Implemented**
+## What was implemented
 
-We've implemented a **Reverse WebSocket** architecture that completely solves the local IP problem!
+**Reverse WebSocket** architecture: the ESP32 initiates an outbound connection to the server. No port forwarding, ngrok, or HTTP device polling required.
 
-### **Architecture:**
+### Architecture
+
 ```
-ESP8266 (Home Network) → WebSocket Client → Connects OUT → Azure Server (Public)
-                                                              ↑
-React App (Browser) → HTTP Requests → Azure Server → Commands ESP8266 via WebSocket
+ESP32 (Home Network) → WebSocket Client (WSS) → Azure / Node Server (Public)
+                                                        ↑
+React App (Browser) → REST /api/* ──────────────────────┘
+                              READ_SENSORS command via WebSocket
 ```
 
-### **Why This Works:**
-- ✅ ESP8266 initiates connection FROM your home network (routers allow outbound connections)
-- ✅ Azure server is publicly accessible (React app can reach it)
-- ✅ No port forwarding needed!
-- ✅ No ngrok needed!
-- ✅ Works from anywhere in the world!
-- ✅ Only reads sensors when you click "Get Data" (saves power)
+### Why this works
+
+- ESP32 connects **out** from the home network (routers allow outbound TLS).
+- The server is publicly reachable; the React app calls REST APIs only.
+- Sensors are read **on demand** when the user clicks Get Data (saves power).
+- Hardware-agnostic protocol: `DEVICE_CONNECT`, `READ_SENSORS`, sensor JSON.
 
 ---
 
-## 📋 **ESP8266 Setup Instructions**
+## ESP32 setup
 
-### **Step 1: Install Required Library**
+### Step 1: Install WebSocketsClient
 
-In Arduino IDE, install the **WebSocketsClient** library:
+In Arduino IDE: **Sketch → Include Library → Manage Libraries** → install **WebSockets by Markus Sattler** (2.3.6+).
 
-1. Open Arduino IDE
-2. Go to: **Sketch → Include Library → Manage Libraries**
-3. Search for: `WebSocketsClient`
-4. Install: **WebSockets by Markus Sattler** (version 2.3.6 or higher)
+### Step 2: Configure firmware
 
-### **Step 2: Upload New Code**
-
-1. Open `temporary.cpp` in Arduino IDE
-2. Update WiFi credentials if needed:
+1. Set Wi-Fi credentials and unique `deviceId` (e.g. `ESP32_FIELD_UNIT_1`).
+2. Point WebSocket host to your deployment:
    ```cpp
-   const char* ssid = "YOUR_WIFI_NAME";
-   const char* password = "YOUR_WIFI_PASSWORD";
+   const char* wsHost = "firstaiproject-b3a0ggccafdveyg8.centralindia-01.azurewebsites.net";
    ```
-3. Upload to ESP8266
-4. Open Serial Monitor (115200 baud)
+3. Upload to ESP32 and open Serial Monitor (115200 baud).
 
-### **Step 3: Verify Connection**
+### Step 3: Verify connection
 
-You should see in Serial Monitor:
+Expected serial output:
+
 ```
-====================================
-ESP8266 IoT Sensor Dashboard
-====================================
-✓ DHT11 initialized on D6 (GPIO12)
-✓ Soil Moisture initialized on A0
-✓ LDR initialized on D5 (GPIO14)
-✓ Motor initialized on D7 (GPIO13) - OFF
-✓ GPS timeout: 60s | Default location: 28.7045168, 77.1566982
-
-⏳ Connecting to Wi-Fi: YOUR_WIFI_NAME
-.........
-✓ Wi-Fi connected!
-  IP Address: 192.168.1.7
-  Signal: -45 dBm
-
-====================================
-✓ HTTP Server Started
-====================================
-Available endpoints:
-  http://192.168.1.7/         - Redirects to Azure
-  http://192.168.1.7/Website  - Dashboard
-  http://192.168.1.7/data     - JSON API
-  http://192.168.1.7/status   - Health Check
-  http://192.168.1.7/test     - Sensor Test
-====================================
-
-🌐 Connecting to Azure WebSocket server...
-   Host: firstaiproject-b3a0ggccafdveyg8.centralindia-01.azurewebsites.net:443/
-✓ WebSocket configured
-====================================
-
-✅ WebSocket Connected to Azure!
-📤 Sent device identification
+✓ Wi-Fi connected
+🌐 Connecting to WebSocket server...
+✅ WebSocket Connected!
+📤 Sent DEVICE_CONNECT: ESP32_FIELD_UNIT_1
 ```
-
-**Important:** Look for `✅ WebSocket Connected to Azure!` - this means it's working!
 
 ---
 
-## 🌐 **Azure Website Usage**
+## Dashboard usage
 
-### **Step 1: Access Deployed Website**
-
-Visit: https://firstaiproject-b3a0ggccafdveyg8.centralindia-01.azurewebsites.net/
-
-### **Step 2: Check Device Connection**
-
-The device ID is set to `ESP1` by default. The website will use this automatically.
-
-### **Step 3: Get Sensor Data**
-
-1. Go to **AI Analysis** page
-2. Click **"Get Data"** button
-3. Watch the status messages:
-   - "⏳ Requesting data from device..."
-   - "⏳ Device is reading sensors..."
-   - "✓ Successfully fetched data from device!"
-
-### **Step 4: View Data**
-
-Data appears in the table with:
-- Device ID
-- Temperature (°C)
-- Humidity (%)
-- Soil Moisture (%)
-- Light Level
-- GPS Coordinates
-- Timestamp
-
-**Note:** Newest data appears at the top!
+1. Open the site (local: `http://localhost:3000` or Azure URL).
+2. Use redirect `?device_id=ESP32_FIELD_UNIT_1` or enter the ID manually.
+3. Click **Get Data** on the AI Analysis page.
+4. View telemetry in the Device Information table (moisture real; N/P/K/pH/EC model-enriched).
 
 ---
 
-## 🔧 **How It Works (Technical)**
+## How it works (technical)
 
-### **1. ESP8266 Connects to Azure**
+### 1. ESP32 connects to server
+
 ```cpp
-webSocket.beginSSL(wsHost, wsPort, wsPath);  // Connects to Azure
+webSocket.beginSSL(wsHost, 443, "/");
+webSocket.sendTXT("{\"type\":\"DEVICE_CONNECT\",\"deviceId\":\"ESP32_FIELD_UNIT_1\"}");
 ```
 
-### **2. User Clicks "Get Data"**
+### 2. User clicks Get Data
+
 ```javascript
-// Frontend sends command
-fetch('/api/request-data?device=ESP1', { method: 'POST' })
+fetch('/api/request-data?device=ESP32_FIELD_UNIT_1', { method: 'POST' });
 ```
 
-### **3. Azure Sends Command to ESP8266**
+### 3. Server sends READ_SENSORS
+
 ```javascript
-// Server sends via WebSocket
-device.ws.send(JSON.stringify({
-  type: 'READ_SENSORS',
-  timestamp: Date.now()
-}));
+device.ws.send(JSON.stringify({ type: 'READ_SENSORS', timestamp: Date.now() }));
 ```
 
-### **4. ESP8266 Reads Sensors**
-```cpp
-void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
-  if (message.indexOf("READ_SENSORS") >= 0) {
-    readAndSendSensorData();  // Read DHT11, Soil, LDR, GPS
-  }
+### 4. ESP32 reads and sends telemetry
+
+```json
+{
+  "deviceId": "ESP32_FIELD_UNIT_1",
+  "temperature": 28.2,
+  "humidity": 65.4,
+  "soil_moisture": 42.1
 }
 ```
 
-### **5. ESP8266 Sends Data Back**
-```cpp
-String json = "{\"device\":\"ESP1\",\"temperature\":28.5,...}";
-webSocket.sendTXT(json);  // Send to Azure
-```
+Server runs `enrichTelemetryWithMockSensors()` when `soil_moisture` is present.
 
-### **6. Frontend Fetches Data**
+### 5. Frontend fetches cached data
+
 ```javascript
-// Get latest data from Azure
-const response = await fetch('/api/device-data-ws?device=ESP1');
+const response = await fetch('/api/device-data-ws?device=ESP32_FIELD_UNIT_1');
 const data = await response.json();
 ```
 
 ---
 
-## 🐛 **Troubleshooting**
+## API endpoints
 
-### **Problem: "Device not connected"**
+### POST /api/request-data?device={id}
 
-**Solution:**
-1. Check ESP8266 Serial Monitor - should show `✅ WebSocket Connected to Azure!`
-2. If not connected, check WiFi credentials
-3. Restart ESP8266 (press reset button)
-4. Wait 10-15 seconds for connection
+Sends `READ_SENSORS` to the ESP32 via WebSocket.
 
-### **Problem: "Device is offline"**
-
-**Solution:**
-1. ESP8266 was connected but disconnected
-2. Check power supply is stable
-3. Check WiFi signal strength
-4. Restart ESP8266
-
-### **Problem: "No data available yet"**
-
-**Solution:**
-1. Device is connected but hasn't sent data yet
-2. Click "Get Data" button again
-3. Check ESP8266 Serial Monitor for sensor readings
-
-### **Problem: Sensors showing 0 values**
-
-**Solution:**
-1. Check sensor wiring:
-   - DHT11 → D6 (GPIO12)
-   - Soil Sensor → A0
-   - LDR → D5 (GPIO14)
-2. Check DHT11 is properly powered (3.3V or 5V + GND)
-3. Open http://192.168.1.7/test (use ESP8266's IP) to test sensors locally
-
----
-
-## 📊 **API Endpoints**
-
-### **1. Request Data from Device**
-```http
-POST /api/request-data?device=ESP1
-```
-Sends "READ_SENSORS" command to ESP8266 via WebSocket.
-
-**Response:**
 ```json
-{
-  "success": true,
-  "message": "Data request sent to device",
-  "deviceId": "ESP1"
-}
+{ "success": true, "message": "Data request sent to device", "deviceId": "ESP32_FIELD_UNIT_1" }
 ```
 
-### **2. Get Latest Sensor Data**
-```http
-GET /api/device-data-ws?device=ESP1
-```
-Returns latest sensor data received from device.
+### GET /api/device-data-ws?device={id}
 
-**Response:**
+Returns latest enriched telemetry from the in-memory device cache.
+
+### GET /api/devices
+
+Lists all WebSocket-connected devices and connection status.
+
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Device not connected | Check serial log for WSS success; verify `deviceId` matches dashboard |
+| Device offline | Power-cycle ESP32; check Wi-Fi signal |
+| No data yet | Click Get Data after connect; confirm `READ_SENSORS` handler in firmware |
+| Zero moisture | Check soil sensor wiring and `soil_moisture` field name in JSON |
+
+### Local simulation (no hardware)
+
+```bash
+npx wscat -c ws://localhost:3000
+```
+
 ```json
-{
-  "device": "ESP1",
-  "temperature": 28.5,
-  "humidity": 65.0,
-  "soilMoisture": 45,
-  "lightLevel": 850,
-  "latitude": 28.7045168,
-  "longitude": 77.1566982,
-  "timestamp": 12345678
-}
-```
-
-### **3. List Connected Devices**
-```http
-GET /api/devices
-```
-Shows all devices currently connected via WebSocket.
-
-**Response:**
-```json
-{
-  "count": 1,
-  "devices": [
-    {
-      "deviceId": "ESP1",
-      "connected": true,
-      "lastUpdate": 1730476800000,
-      "hasData": true
-    }
-  ]
-}
+{"type":"DEVICE_CONNECT","deviceId":"ESP32_FIELD_UNIT_1"}
+{"deviceId":"ESP32_FIELD_UNIT_1","temperature":28.2,"humidity":65.4,"soil_moisture":42.1}
 ```
 
 ---
 
-## 🎉 **Benefits of This Solution**
+## Multiple devices
 
-| Feature | Old (HTTP) | New (WebSocket) |
-|---------|-----------|-----------------|
-| **Works from Anywhere** | ❌ No (local IP only) | ✅ Yes |
-| **Port Forwarding** | ❌ Required | ✅ Not needed |
-| **ngrok Required** | ❌ Yes | ✅ No |
-| **Real-time** | ❌ Poll-based | ✅ Bidirectional |
-| **Power Efficient** | ❌ Always on | ✅ On-demand |
-| **Easy Setup** | ❌ Complex | ✅ Just upload code |
+Use a unique `deviceId` per ESP32 and matching `?device_id=` in the dashboard URL:
 
----
-
-## 🔒 **Security Notes**
-
-1. **WebSocket uses SSL/TLS** - Connection is encrypted
-2. **Azure HTTPS** - All communication is secure
-3. **No device password** - Consider adding authentication if needed
-4. **Device ID** - Currently "ESP1", can be changed for multiple devices
-
----
-
-## 🚀 **Next Steps**
-
-### **Multiple Devices Support**
-
-To add more devices, just change the device ID in ESP8266 code:
-
-```cpp
-const char* deviceID = "ESP2";  // Change to ESP2, ESP3, etc.
 ```
-
-Then in React app, specify device when fetching:
-```javascript
-fetch('/api/device-data-ws?device=ESP2')
-```
-
-### **Add Authentication**
-
-You can add a secret key to device identification:
-
-```cpp
-String connectMsg = "{\"type\":\"DEVICE_CONNECT\",\"deviceId\":\"ESP1\",\"secret\":\"YOUR_SECRET_KEY\"}";
+ESP32_FIELD_UNIT_1
+ESP32_FIELD_UNIT_2
 ```
 
 ---
 
-## 📞 **Support**
+## Security notes
 
-If you encounter issues:
-1. Check ESP8266 Serial Monitor for detailed logs
-2. Check browser console (F12) for errors
-3. Verify ESP8266 shows "✅ WebSocket Connected to Azure!"
-4. Try restarting both ESP8266 and refreshing website
+- WSS/TLS encrypts device-to-server traffic in production.
+- Consider adding a shared secret on `DEVICE_CONNECT` for production deployments.
+- Legacy HTTP routes (`/api/device-data?ip=`, `?deviceIP=`) are removed — WebSocket only.
 
 ---
 
-**Deployment Status:** ✅ Pushed to GitHub - will auto-deploy to Azure in 2-3 minutes!
+## Related docs
+
+- `ESP32_INTEGRATION.md` — payload formats and React integration

@@ -1,0 +1,176 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { login } from '../lib/auth';
+
+const Login = () => {
+  const navigate = useNavigate();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // Small delay for feel
+    setTimeout(() => {
+      const result = login(username, password);
+      if (result.success) {
+        navigate('/language-select');
+      } else {
+        setError(result.error);
+        setLoading(false);
+        setShake(true);
+        setTimeout(() => setShake(false), 500);
+      }
+    }, 400);
+  };
+
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{
+        backgroundColor: '#010101',
+        backgroundImage:
+          'linear-gradient(to right, rgba(244,231,213,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(244,231,213,0.05) 1px, transparent 1px)',
+        backgroundSize: '30px 30px',
+      }}
+    >
+      {/* Card */}
+      <div
+        className={`w-full max-w-sm border-2 border-neo-cream rounded-3xl shadow-[8px_8px_0px_#F4E7D5] p-8 transition-transform ${shake ? 'animate-shake' : ''}`}
+        style={{ backgroundColor: '#111111', backgroundImage: 'none' }}
+      >
+        {/* Logo + title */}
+        <div className="mb-10 text-center">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <svg viewBox="0 0 24 24" className="w-8 h-8 text-neo-green-dark" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" strokeOpacity="0.3"/>
+              <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z"/>
+              <path d="M12 2v4M12 18v4M2 12h4M18 12h4" strokeOpacity="0.5"/>
+            </svg>
+          </div>
+          <h1 className="font-heading text-4xl text-neo-cream uppercase leading-none mb-2">
+            FARMER LOGIN
+          </h1>
+          <p className="font-body text-neo-cream/40 text-xs uppercase tracking-widest">
+            AgriIntelligence · Field Monitor
+          </p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* Username */}
+          <div>
+            <label className="block font-subheading text-[11px] uppercase tracking-widest text-neo-cream/50 mb-2">
+              Full Name / Username
+            </label>
+            <input
+              id="login-username"
+              type="text"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="e.g. Rajesh Kumar"
+              className="w-full border-2 border-neo-cream/50 rounded-xl px-4 py-3 font-body text-sm text-neo-cream focus:outline-none focus:border-neo-cream transition-colors"
+              style={{ backgroundColor: '#010101', backgroundImage: 'none' }}
+              required
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block font-subheading text-[11px] uppercase tracking-widest text-neo-cream/50 mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="login-password"
+                type={showPass ? 'text' : 'password'}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••"
+                className="w-full border-2 border-neo-cream/50 rounded-xl px-4 py-3 pr-12 font-body text-sm text-neo-cream focus:outline-none focus:border-neo-cream transition-colors"
+                style={{ backgroundColor: '#010101', backgroundImage: 'none' }}
+                required
+              />
+              {/* Show/hide toggle */}
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neo-cream/40 hover:text-neo-cream transition-colors"
+                tabIndex={-1}
+              >
+                {showPass ? (
+                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div
+              className="border border-red-500/50 rounded-xl px-4 py-3"
+              style={{ backgroundColor: 'rgba(239,68,68,0.08)', backgroundImage: 'none' }}
+            >
+              <p className="font-subheading text-xs text-red-400 uppercase tracking-widest">{error}</p>
+            </div>
+          )}
+
+          {/* Submit */}
+          <button
+            id="login-submit"
+            type="submit"
+            disabled={loading}
+            className="w-full bg-neo-green-dark text-neo-cream border-2 border-neo-cream rounded-xl py-4 font-heading text-xl uppercase shadow-[4px_4px_0px_#F4E7D5] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[1px_1px_0px_#F4E7D5] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            style={{ backgroundImage: 'none' }}
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.3"/>
+                  <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+                </svg>
+                SIGNING IN...
+              </span>
+            ) : 'SIGN IN'}
+          </button>
+        </form>
+
+        {/* Hint */}
+        <p className="text-center font-body text-neo-cream/20 text-[11px] mt-8 uppercase tracking-widest">
+          Any name · password: qwerty
+        </p>
+      </div>
+
+      {/* Shake animation */}
+      <style>{`
+        @keyframes shake {
+          0%,100% { transform: translateX(0); }
+          20%      { transform: translateX(-8px); }
+          40%      { transform: translateX(8px); }
+          60%      { transform: translateX(-5px); }
+          80%      { transform: translateX(5px); }
+        }
+        .animate-shake { animation: shake 0.45s ease-out; }
+      `}</style>
+    </div>
+  );
+};
+
+export default Login;

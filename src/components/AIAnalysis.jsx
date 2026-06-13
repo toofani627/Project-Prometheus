@@ -1,29 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { useDeviceStore } from '../store/deviceStore';
+import { getSession, getProfileKey } from '../lib/auth';
 
 /**
  * AIAnalysis Component
- * 
+ *
  * Full AI Analysis dashboard with:
- * - Device information table with REAL environmental data from ESP8266
+ * - Device information table with live ESP32 sensor data (WebSocket)
  * - Control buttons (Get Data, Export JSON, Clear Data)
- * - Crop type selector dropdown
- * - pH scale visualization
- * - Additional query text area
- * - AI Analysis button
- * 
- * All UI elements automatically translate based on selected language.
- * Fetches real sensor data from ESP8266 via http://<deviceIP>/data endpoint
+ * - Crop type selector, pH scale, farm history, and AI analysis
+ *
+ * Sensor flow: POST /api/request-data → READ_SENSORS → GET /api/device-data-ws
  */
+const LOADING_LINES = [
+  'INITIALIZING SENSOR PIPELINE...',
+  'READING SOIL MOISTURE DATA...',
+  'PARSING NPK LEVELS...',
+  'FETCHING GEOLOCATION...',
+  'CROSS-REFERENCING WEATHER DATA...',
+  'LOADING CROP DATABASE...',
+  'RUNNING NEURAL INFERENCE...',
+  'CALCULATING YIELD PROBABILITIES...',
+  'EVALUATING COMPANION SYNERGIES...',
+  'RANKING CROP RECOMMENDATIONS...',
+  'COMPUTING SOIL HEALTH SCORE...',
+  'ANALYSIS COMPLETE ✓',
+];
+
 const AIAnalysis = () => {
   const { t, changeLanguage, language } = useLanguage();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
-  // Device store for fetching data from ESP8266
-  const { deviceIP, getDeviceDataURL } = useDeviceStore();
+  const navigate = useNavigate();
 
   const handleLanguageSwitch = () => {
     // Clear language to show selection screen again
@@ -32,19 +40,30 @@ const AIAnalysis = () => {
   };
   
   // Device data state
-  const [devices, setDevices] = useState([]);
+  const [devices, setDevices] = useState(() => {
+    const saved = localStorage.getItem('ai_analysis_devices');
+    try { return saved ? JSON.parse(saved) : []; } catch { return []; }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('ai_analysis_devices', JSON.stringify(devices));
+  }, [devices]);
 
   const [selectedCrop, setSelectedCrop] = useState('');
   const [cropStage, setCropStage] = useState('');
   const [fieldArea, setFieldArea] = useState('');
   const [areaUnit, setAreaUnit] = useState('bigha'); // Default unit
-  const [selectedPH, setSelectedPH] = useState(''); // Selected pH value
   const [query, setQuery] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [aiResult, setAiResult] = useState(null);
   const [aiError, setAiError] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [parsedResult, setParsedResult] = useState(null); // { soil_score, soil_summary, top_crops }
+  const [companionMode, setCompanionMode] = useState(false);
+  const [showMoreCrops, setShowMoreCrops] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [showCropResults, setShowCropResults] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [errorPopup, setErrorPopup] = useState({ show: false, message: '', solution: '', type: 'error' });
   
@@ -76,22 +95,19 @@ const AIAnalysis = () => {
   }, [searchParams]);
 
   /**
-   * Fetch sensor data from ESP8266 via WebSocket
-   * 
-   * NEW FLOW (On-Demand):
+   * Fetch sensor data from ESP32 via WebSocket (on-demand):
    * 1. User clicks "Get Data"
-   * 2. Frontend → POST /api/request-data → Azure Server
-   * 3. Azure Server → WebSocket → "READ_SENSORS" command → ESP8266
-   * 4. ESP8266 reads sensors → WebSocket → Sends data → Azure Server
-   * 5. Frontend → GET /api/device-data-ws → Gets latest data → Display
+   * 2. Frontend → POST /api/request-data → Server
+   * 3. Server → WebSocket → READ_SENSORS → ESP32
+   * 4. ESP32 reads sensors → WebSocket → Server (mock NPK/pH/EC enriched)
+   * 5. Frontend → GET /api/device-data-ws → Display
    * 
    * Benefits:
    * - Works from anywhere (no local IP issues!)
    * - Only reads sensors when needed (saves power)
    * - Real-time bidirectional communication
    * 
-   * Security: Device ID can be passed via URL parameter (?device_id=ESP1)
-   * If not provided, defaults to 'ESP1'
+   * Device ID can be passed via URL (?device_id=ESP32_FIELD_UNIT_1)
    */
   const fetchDeviceData = async () => {
     // Check if device ID is available
@@ -108,7 +124,7 @@ const AIAnalysis = () => {
     console.log('Using device ID:', deviceId);
 
     setLoading(true);
-    setStatusMessage('⏳ ' + (language === 'hi' ? 'डिवाइस से डेटा मांग रहे हैं...' : language === 'ta' ? 'சாதனத்திலிருந்து தரவு கோருகிறது...' : 'Requesting data from device...'));
+    setStatusMessage((language === 'hi' ? 'डिवाइस से डेटा मांग रहे हैं...' : language === 'ta' ? 'சாதனத்திலிருந்து தரவு கோருகிறது...' : 'Requesting data from device...'));
 
     try {
       console.log('Step 1: Sending READ_SENSORS command to device:', deviceId);
@@ -126,7 +142,7 @@ const AIAnalysis = () => {
       const requestResult = await requestResponse.json();
       console.log('Command sent successfully:', requestResult);
       
-      setStatusMessage('⏳ ' + (language === 'hi' ? 'डिवाइस सेंसर पढ़ रहा है...' : language === 'ta' ? 'சாதனம் உணரிகளை படிக்கிறது...' : 'Device is reading sensors...'));
+      setStatusMessage((language === 'hi' ? 'डिवाइस सेंसर पढ़ रहा है...' : language === 'ta' ? 'சாதனம் உணரிகளை படிக்கிறது...' : 'Device is reading sensors...'));
       
       // Step 2: Wait a moment for device to read sensors (2 seconds)
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -144,16 +160,18 @@ const AIAnalysis = () => {
       const data = await dataResponse.json();
       console.log('Received sensor data:', data);
       
-      // Transform ESP8266 data format to our table format
-      // ESP8266 sends: device, temperature, humidity, soilMoisture, lightLevel, latitude, longitude
+      // ESP32 sends real moisture; server enriches NPK / pH / EC via mock engine
       const newDevice = {
-        id: data.device || data.deviceID || deviceIP,
-        temperature: data.temperature || 0,
-        humidity: data.humidity || 0,
-        soil: data.soilMoisture || 0,
-        soilTemp: data.soilTemperature || 0,
-        light: data.lightLevel || 0,
-        gps: `${data.latitude || 0}, ${data.longitude || 0}`,
+        id: data.device || data.deviceID || data.deviceId || deviceId,
+        temperature: data.temperature ?? '-',
+        humidity: data.humidity ?? '-',
+        soil: data.soil_moisture ?? data.soilMoisture ?? '-',
+        nitrogen: data.nitrogen ?? data.n ?? '-',
+        phosphorus: data.phosphorus ?? data.p ?? '-',
+        potassium: data.potassium ?? data.k ?? '-',
+        phLevel: data.ph_level ?? data.pH ?? data.ph ?? '-',
+        ec: data.electrical_conductivity ?? data.ec ?? '-',
+        soilTemp: data.soilTemperature ?? data.soil_temperature ?? '-',
         timestamp: new Date().toLocaleString('en-GB', {
           year: 'numeric',
           month: '2-digit',
@@ -171,7 +189,7 @@ const AIAnalysis = () => {
       // Show success popup
       setErrorPopup({
         show: true,
-        message: language === 'hi' ? '✓ डेटा मिल गया!' : language === 'ta' ? '✓ தரவு வெற்றிகரமாக பெறப்பட்டது!' : '✓ Data received successfully!',
+        message: language === 'hi' ? 'डेटा मिल गया!' : language === 'ta' ? 'தரவு வெற்றிகரமாக பெறப்பட்டது!' : 'Data received successfully!',
         solution: language === 'hi' ? 'अब नीचे टेबल में देखें' : language === 'ta' ? 'கீழே அட்டவணையில் பார்க்கவும்' : 'Check the table below',
         type: 'success'
       });
@@ -214,17 +232,103 @@ const AIAnalysis = () => {
     fetchDeviceData();
   };
 
-  const handleManualDeviceIdSubmit = (e) => {
+  // Load mock/demo data for testing
+  const handleLoadMockData = () => {
+    const mockDevice = {
+      id: 'DEMO-DEVICE',
+      temperature: 32.1,
+      humidity: 58.4,
+      soil: 45.8,
+      nitrogen: 40.2,
+      phosphorus: 18.5,
+      potassium: 145.0,
+      phLevel: 7.2,
+      ec: 1.15,
+      soilTemp: 29.8,
+      timestamp: new Date().toLocaleString('en-GB', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }),
+      raw: {
+        device: 'DEMO-DEVICE',
+        temperature: 32.1,
+        humidity: 58.4,
+        soil_moisture: 45.8,
+        soilMoisture: 45.8,
+        nitrogen: 40.2,
+        phosphorus: 18.5,
+        potassium: 145.0,
+        ph_level: 7.2,
+        electrical_conductivity: 1.15,
+        soilTemperature: 29.8,
+        latitude: 21.3099,
+        longitude: 77.1025,
+        pH: 7.2,
+        _mock_sensors_generated: true
+      }
+    };
+    setDevices(prev => [mockDevice, ...prev]);
+    setErrorPopup({
+      show: true,
+      message: language === 'hi' ? 'डेमो डेटा लोड हो गया!' : language === 'ta' ? 'டெமோ தரவு சுமக்கப்பட்டது!' : 'Demo data loaded!',
+      solution: null,
+      type: 'success',
+      isLarge: true
+    });
+    setStatusMessage('');
+  };
+
+  const handleManualDeviceIdSubmit = async (e) => {
     e.preventDefault();
-    if (manualDeviceId.trim()) {
-      const trimmedId = manualDeviceId.trim();
-      setDeviceId(trimmedId);
-      localStorage.setItem('captured_device_id', trimmedId);
-      console.log('✅ Manual device ID saved:', trimmedId);
-      setShowDeviceIdInput(false);
-      setManualDeviceId('');
-      setStatusMessage(`✓ Device ID set: ${trimmedId}`);
-      setTimeout(() => setStatusMessage(''), 3000);
+    const trimmedId = manualDeviceId.trim();
+    
+    if (trimmedId.length < 5) {
+      alert("Please enter a valid Device ID format.");
+      return;
+    }
+
+    setStatusMessage(language === 'hi' ? 'प्रमाणीकरण हो रहा है...' : language === 'ta' ? 'அங்கீகரிக்கிறது...' : 'Authenticating...');
+
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${baseUrl}/api/auth-device`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: trimmedId })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.type === 'auth_success') {
+        setDeviceId(trimmedId);
+        localStorage.setItem('captured_device_id', trimmedId);
+        console.log('✅ Manual device ID authenticated and saved:', trimmedId);
+        setShowDeviceIdInput(false);
+        setManualDeviceId('');
+        setStatusMessage(`Device ID connected: ${trimmedId}`);
+        setTimeout(() => setStatusMessage(''), 3000);
+      } else {
+        setErrorPopup({
+          show: true,
+          message: 'Connection Rejected: Invalid Device ID',
+          solution: language === 'hi' ? 'कृपया अपनी डिवाइस आईडी की जांच करें और पुनः प्रयास करें।' : language === 'ta' ? 'உங்கள் சாதன ஐடியை சரிபார்த்து மீண்டும் முயற்சிக்கவும்.' : 'Please check your device ID and try again.',
+          type: 'error'
+        });
+        setStatusMessage('');
+      }
+    } catch (error) {
+      console.error('Auth error:', error);
+      setErrorPopup({
+        show: true,
+        message: 'Connection Error',
+        solution: language === 'hi' ? 'प्रमाणीकरण सर्वर से कनेक्ट नहीं हो सका।' : language === 'ta' ? 'அங்கீகார சேவையகத்துடன் இணைக்க முடியவில்லை.' : 'Could not connect to authentication server.',
+        type: 'error'
+      });
+      setStatusMessage('');
     }
   };
 
@@ -277,13 +381,22 @@ const AIAnalysis = () => {
       return Number.isFinite(num) ? num : null;
     };
 
+    // Use live sensor pH value directly (no longer accept manual selection)
+    const resolvedPh = raw.ph_level ?? raw.pH ?? latest.phLevel;
+
     const telemetryPayload = {
       device: raw.device || raw.deviceId || raw.deviceID || latest.id || deviceId,
       temperature: toNumberOrNull(raw.temperature ?? latest.temperature),
       humidity: toNumberOrNull(raw.humidity ?? latest.humidity),
-      soilMoisture: toNumberOrNull(raw.soilMoisture ?? latest.soil),
+      soil_moisture: toNumberOrNull(raw.soil_moisture ?? raw.soilMoisture ?? latest.soil),
+      soilMoisture: toNumberOrNull(raw.soil_moisture ?? raw.soilMoisture ?? latest.soil),
       soilTemperature: toNumberOrNull(raw.soilTemperature ?? latest.soilTemp),
-      soilMoistureRaw: toNumberOrNull(raw.soilMoistureRaw),
+      soilMoistureRaw: toNumberOrNull(raw.soilMoistureRaw ?? raw.soil_moisture_raw),
+      nitrogen: toNumberOrNull(raw.nitrogen ?? raw.n ?? latest.nitrogen),
+      phosphorus: toNumberOrNull(raw.phosphorus ?? raw.p ?? latest.phosphorus),
+      potassium: toNumberOrNull(raw.potassium ?? raw.k ?? latest.potassium),
+      ph_level: toNumberOrNull(resolvedPh),
+      electrical_conductivity: toNumberOrNull(raw.electrical_conductivity ?? raw.ec ?? latest.ec),
       lightLevel: toNumberOrNull(raw.lightLevel ?? latest.light),
       lightStatus: raw.lightStatus || (latest.light >= 500 ? 'Bright' : 'Dark'),
       latitude: toNumberOrNull(raw.latitude),
@@ -311,38 +424,81 @@ const AIAnalysis = () => {
 
     const fieldAreaInHectares = convertToHectares(fieldArea, areaUnit);
 
+    // Load farm history from localStorage
+    let farmHistoryPayload = {};
+    try {
+      const savedProfile = localStorage.getItem('farmerProfile');
+      if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        // Flatten the arrays into the old format that backend expects
+        if (Array.isArray(profile.crops) && profile.crops.length > 0) {
+          if (profile.crops[0]) {
+            farmHistoryPayload.crop_1_name = profile.crops[0].name?.trim() || null;
+            farmHistoryPayload.crop_1_date_grown = profile.crops[0].dateGrown || null;
+          }
+          if (profile.crops[1]) {
+            farmHistoryPayload.crop_2_name = profile.crops[1].name?.trim() || null;
+            farmHistoryPayload.crop_2_date_grown = profile.crops[1].dateGrown || null;
+          }
+        }
+        if (Array.isArray(profile.fertilizers) && profile.fertilizers.length > 0) {
+          const fert = profile.fertilizers[0];
+          farmHistoryPayload.fertilizer_used_name = fert.name?.trim() || null;
+          farmHistoryPayload.fertilizer_amount = fert.amount ? parseFloat(fert.amount) : null;
+          farmHistoryPayload.fertilizer_unit = fert.unit || null;
+        }
+      }
+    } catch (err) {
+      console.error('Error loading farm history from localStorage:', err);
+    }
+
     const requestBody = {
       deviceId,
       telemetry: telemetryPayload,
       cropType: selectedCrop || 'unknown',
       cropStage: cropStage || 'unknown',
       fieldArea: fieldAreaInHectares || null,
-      soilPH: selectedPH || null,
+      soilPH: telemetryPayload.ph_level || null,
       language: language || 'en',
-      additionalQuery: query || 'None'
+      additionalQuery: query || 'None',
+      farmHistory: farmHistoryPayload
     };
+
+    // Reset UI for new analysis run
+    setParsedResult(null);
+    setShowCropResults(false);
+    setShowMoreCrops(false);
+    setCompanionMode(false);
+    setLoadingStep(0);
+
+    // Start terminal loading animation (one line every 220ms)
+    let animStep = 0;
+    const animInterval = setInterval(() => {
+      animStep++;
+      setLoadingStep(animStep);
+      if (animStep >= LOADING_LINES.length) clearInterval(animInterval);
+    }, 220);
 
     try {
       setAiLoading(true);
       setAiError('');
       setAiResult(null);
       
-      setStatusMessage('🌦️ Fetching weather data...');
+      setStatusMessage('Fetching weather data...');
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      setStatusMessage('✅ Weather data received | 📝 Preparing prompt...');
+      setStatusMessage('Weather data received | Preparing prompt...');
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      setStatusMessage('🤖 Sending to AI model...');
+      setStatusMessage('Sending to AI model...');
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      setStatusMessage('⏳ Waiting for AI response...');
+      setStatusMessage('Waiting for AI response...');
 
-      const response = await fetch('/api/ai/analyze', {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${baseUrl}/api/ai/analyze`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
       });
 
@@ -350,35 +506,49 @@ const AIAnalysis = () => {
         const errorText = await response.text();
         let errorMessage = `AI request failed (${response.status})`;
         try {
-          const parsed = JSON.parse(errorText);
-          if (parsed.error) {
-            errorMessage = parsed.error;
-          }
+          const parsedErr = JSON.parse(errorText);
+          if (parsedErr.error) errorMessage = parsedErr.error;
         } catch (parseErr) {
           console.warn('AI error response not JSON:', parseErr);
         }
         throw new Error(errorMessage);
       }
 
-      setStatusMessage('📥 Response received | 🔄 Parsing data...');
+      setStatusMessage('Response received | Parsing data...');
       await new Promise(resolve => setTimeout(resolve, 300));
       
       const result = await response.json();
       setAiResult(result.recommendation || null);
-      
-      setStatusMessage('✅ Analysis complete | ✓ Successfully parsed!');
+
+      // Parse structured JSON from the AI recommendation string
+      let parsed = null;
+      try {
+        let text = result.recommendation || '';
+        // Strip markdown code fences if the model wrapped the JSON
+        if (text.includes('```')) {
+          text = text.replace(/^```(?:json)?\n?/im, '').replace(/\n?```$/im, '');
+        }
+        // Find first { to handle any leading whitespace/text
+        const jsonStart = text.indexOf('{');
+        if (jsonStart !== -1) text = text.slice(jsonStart);
+        parsed = JSON.parse(text.trim());
+      } catch {
+        // Fallback: wrap plain text as a soil summary with no crop cards
+        parsed = { soil_score: null, soil_summary: result.recommendation, top_crops: [] };
+      }
+      setParsedResult(parsed);
+      setStatusMessage('Analysis complete | Successfully parsed!');
+
     } catch (error) {
       console.error('AI analysis error:', error);
       setAiResult(null);
       
-      // Create simple, actionable error message
       let simpleError = language === 'hi' 
         ? 'AI से जवाब नहीं मिला। कृपया दोबारा कोशिश करें।'
         : language === 'ta'
         ? 'AI பதில் தோல்வியுற்றது. மீண்டும் முயற்சிக்கவும்.'
         : 'AI response failed. Please try again.';
       
-      // Check for specific errors
       if (error.message.includes('network') || error.message.includes('fetch')) {
         simpleError = language === 'hi'
           ? 'इंटरनेट कनेक्शन जांचें और फिर से कोशिश करें।'
@@ -402,13 +572,10 @@ const AIAnalysis = () => {
       setAiError(simpleError);
       setShowErrorPopup(true);
       setStatusMessage('');
-      
-      // Auto-hide popup after 5 seconds
-      setTimeout(() => {
-        setShowErrorPopup(false);
-        setAiError('');
-      }, 5000);
+      setTimeout(() => { setShowErrorPopup(false); setAiError(''); }, 5000);
     } finally {
+      clearInterval(animInterval);
+      setLoadingStep(LOADING_LINES.length); // snap animation to end
       setAiLoading(false);
     }
   };
@@ -418,611 +585,1094 @@ const AIAnalysis = () => {
     { value: '4.0', color: 'bg-red-600' },
     { value: '5.0', color: 'bg-orange-500' },
     { value: '6.0', color: 'bg-yellow-400' },
-    { value: '7.0', color: 'bg-green-500' },
+    { value: '7.0', color: 'bg-blue-500' },
     { value: '8.0', color: 'bg-cyan-500' },
     { value: '9.0', color: 'bg-blue-600' },
     { value: '10.0', color: 'bg-indigo-700' }
   ];
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm py-3 sm:py-4 px-4 sm:px-6">
-        <div className="container mx-auto flex items-center justify-between gap-2">
-          <div className="w-24 sm:w-32"></div> {/* Spacer for centering */}
-          <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-800 text-center flex-1 px-2">
-            {t('aiAnalysisDashboard')}
-          </h1>
-          <button
-            onClick={handleLanguageSwitch}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-xs sm:text-sm whitespace-nowrap"
-          >
-            {language === 'en' ? 'हिं/த' : language === 'hi' ? 'En/த' : 'En/हिं'}
-          </button>
-        </div>
-      </div>
+  // Helper: Get live pH value from telemetry and find closest pH block
+  const getLivePhValue = () => {
+    const livePhLevel = devices.length > 0 
+      ? (devices[0]?.phLevel || devices[0]?.raw?.ph_level || devices[0]?.raw?.pH)
+      : null;
+    
+    if (!livePhLevel && livePhLevel !== 0) return null;
+    
+    const phNum = parseFloat(livePhLevel);
+    if (!Number.isFinite(phNum)) return null;
+    
+    // Find closest pH block
+    const phValues = phColors.map(ph => parseFloat(ph.value));
+    const closest = phValues.reduce((prev, curr) => 
+      Math.abs(curr - phNum) < Math.abs(prev - phNum) ? curr : prev
+    );
+    
+    return closest.toFixed(1);
+  };
 
-      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
-        {/* Device ID Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6 border-2 border-blue-200">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-              🔐 {language === 'en' ? 'Device Connection' : 'डिवाइस कनेक्शन'}
-            </h2>
-            {deviceId && (
-              <button
-                onClick={() => setShowDeviceIdInput(!showDeviceIdInput)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
-              >
-                {showDeviceIdInput ? '✕ Cancel' : '✏️ Change'}
-              </button>
+  const livePhValue = getLivePhValue();
+
+  // ── Display helpers ─────────────────────────────────────────────────────
+  const [greeting, setGreeting] = useState('');
+
+  useEffect(() => {
+    const updateGreeting = () => {
+      const h = new Date().getHours();
+      if (language === 'hi') {
+        if (h >= 5 && h < 12) setGreeting('शुभ प्रभात');
+        else if (h >= 12 && h < 17) setGreeting('शुभ दोपहर');
+        else setGreeting('शुभ संध्या');
+      } else if (language === 'ta') {
+        if (h >= 5 && h < 12) setGreeting('காலை வணக்கம்');
+        else if (h >= 12 && h < 17) setGreeting('மதிய வணக்கம்');
+        else setGreeting('மாலை வணக்கம்');
+      } else {
+        if (h >= 5 && h < 12) setGreeting('GOOD MORNING');
+        else if (h >= 12 && h < 17) setGreeting('GOOD AFTERNOON');
+        else setGreeting('GOOD EVENING');
+      }
+    };
+    updateGreeting();
+    const timer = setInterval(updateGreeting, 60000); // update every minute
+    return () => clearInterval(timer);
+  }, [language]);
+
+  // Reveal crop cards once animation is done AND AI has responded
+  useEffect(() => {
+    if (parsedResult !== null && loadingStep >= LOADING_LINES.length) {
+      const t = setTimeout(() => setShowCropResults(true), 500);
+      return () => clearTimeout(t);
+    }
+  }, [parsedResult, loadingStep]);
+
+  const getFarmerName = () => {
+    try {
+      const session = getSession();
+      const profileKey = getProfileKey();
+      const p = JSON.parse(localStorage.getItem(profileKey) || '{}');
+      if (p.farmerName) return p.farmerName.toUpperCase();
+      if (session && session.username) return session.username.toUpperCase();
+      return language === 'hi' ? 'किसान' : 'FARMER';
+    } catch { return language === 'hi' ? 'किसान' : 'FARMER'; }
+  };
+
+
+  const latest = devices.length > 0 ? devices[0] : null;
+
+  const getSoilStatus = (v) => {
+    if (v === null || v === undefined || v === '-') return null;
+    const n = parseFloat(v);
+    if (n < 30) return { label: language === 'hi' ? 'कम' : 'LOW', color: 'text-red-400 bg-red-900/30 border-red-500' };
+    if (n > 80) return { label: language === 'hi' ? 'अधिक' : 'HIGH', color: 'text-yellow-400 bg-yellow-900/30 border-yellow-500' };
+    return { label: language === 'hi' ? 'सामान्य' : 'OPTIMAL', color: 'text-neo-green-light bg-neo-green-dark/30 border-neo-green-dark' };
+  };
+
+  return (
+    <div className="min-h-screen bg-transparent text-neo-cream">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-6 sm:py-8 max-w-7xl">
+
+        {/* ── HERO SECTION ─────────────────────────────────────────────── */}
+        <div className="mb-8 border-b border-neo-cream/20 pb-6">
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl text-neo-cream uppercase leading-none mb-2">
+            {greeting}, {getFarmerName()}
+          </h1>
+          {selectedCrop && (
+            <p className="font-body text-neo-cream/50 text-sm mt-1">
+              {t('selectedCrop')} {selectedCrop}
+              {latest ? ` · ${latest.timestamp}` : ''}
+            </p>
+          )}
+          <div className="flex items-center gap-3 mt-4">
+            <span className={`inline-block w-2.5 h-2.5 rounded-full ${devices.length > 0 ? 'bg-neo-green-dark animate-pulse' : 'bg-red-500'}`}></span>
+            <span className="font-subheading text-xs uppercase tracking-widest">
+              {devices.length > 0 ? t('sensorOnline') : t('sensorOffline')}
+            </span>
+            {latest && (
+              <span className="font-body text-neo-cream/40 text-xs">
+                {t('lastSynced')} {latest.timestamp}
+              </span>
             )}
           </div>
+        </div>
 
-          {/* Current Device ID Display */}
-          {deviceId && !showDeviceIdInput ? (
-            <div className="bg-white rounded-lg p-4 border-2 border-green-300">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">✓</span>
-                <span className="font-semibold text-gray-700">
-                  {language === 'en' ? 'Connected Device:' : 'कनेक्टेड डिवाइस:'}
-                </span>
+
+
+        {/* ── SENSOR CARDS GRID ─────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
+
+          {/* SOIL MOISTURE — Full-width horizontal card, huge number + big cream arc */}
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-7 sm:col-span-2 lg:col-span-2 flex items-center justify-between min-h-[180px]">
+            {/* Left: label, badge, huge number */}
+            <div className="flex flex-col justify-between h-full">
+              <div>
+                <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60 mb-2">
+                  {t('soilMoistureTitle')}
+                </p>
+                {latest?.soil && latest.soil !== '-' && (() => {
+                  const s = getSoilStatus(latest.soil);
+                  return s ? <span className={`font-subheading text-[11px] font-bold uppercase px-3 py-1 rounded-full border ${s.color}`}>{s.label}</span> : null;
+                })()}
               </div>
-              <div className="font-mono text-xl font-bold text-green-700 mb-1">{deviceId}</div>
-              <p className="text-sm text-gray-600 mb-3">
-                {language === 'en' 
-                  ? 'Device ID is stored. You can now fetch sensor data.' 
-                  : 'डिवाइस ID सेव है। अब डेटा ले सकते हैं।'}
-              </p>
-              
-              {/* Get Data Button */}
-              <button
-                onClick={handleGetData}
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors duration-200 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <span className="animate-spin">⏳</span>
-                    <span>{language === 'en' ? 'Fetching...' : language === 'hi' ? 'डेटा आ रहा है...' : 'தரவு வருகிறது...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>📊</span>
-                    <span>{t('getData')}</span>
-                  </>
-                )}
-              </button>
+              <div className="mt-6">
+                <p className="font-heading leading-none text-neo-cream" style={{fontSize: 'clamp(4rem, 10vw, 7rem)'}}>
+                  {latest?.soil && latest.soil !== '-' ? latest.soil : '--'}<span className="text-neo-cream/50" style={{fontSize: 'clamp(2.5rem, 6vw, 4rem)'}}>%</span>
+                </p>
+                <p className="font-body text-neo-cream/25 text-[10px] uppercase tracking-widest mt-3">
+                  ESP32 SENSOR{deviceId ? ` · ${deviceId.split('_').pop()}` : ''}
+                </p>
+              </div>
             </div>
-          ) : (
-            /* Manual Device ID Entry Form */
-            <form onSubmit={handleManualDeviceIdSubmit} className="bg-white rounded-lg p-4 border-2 border-yellow-300">
-              <div className="flex items-start gap-2 mb-3">
-                <span className="text-2xl">⚠️</span>
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-700 mb-1">
-                    {language === 'en' 
-                      ? 'No Device ID detected' 
-                      : 'डिवाइस ID नहीं मिला'}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {language === 'en'
-                      ? 'Enter your device ID to connect. If you accessed via local network, it should be auto-detected.'
-                      : 'डिवाइस जोड़ने के लिए ID लिखें। लोकल नेटवर्क से अपने आप मिल जाना चाहिए।'}
-                  </p>
+
+            {/* Right: Large cream arc gauge */}
+            {(() => {
+              const val = latest?.soil && latest.soil !== '-' ? Math.min(100, Math.max(0, parseFloat(latest.soil))) : 0;
+              const hasData = !!(latest?.soil && latest.soil !== '-');
+              const SIZE = 160; const CX = 80; const CY = 80; const R = 65; const SW = 14;
+              const START = -220; const ARC = 260;
+              const toRad = d => d * Math.PI / 180;
+              const pt = (deg, r) => ({ x: CX + r * Math.cos(toRad(deg)), y: CY + r * Math.sin(toRad(deg)) });
+              const arc = (a1, a2) => {
+                const s = pt(a1, R); const e = pt(a2, R);
+                return `M${s.x.toFixed(2)} ${s.y.toFixed(2)} A${R} ${R} 0 ${Math.abs(a2-a1)>180?1:0} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
+              };
+              const endAngle = START + (hasData ? (val / 100) * ARC : 0);
+              return (
+                <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="flex-shrink-0">
+                  {/* Track */}
+                  <path d={arc(START, START+ARC)} fill="none" stroke="rgba(244,231,213,0.12)" strokeWidth={SW} strokeLinecap="round"/>
+                  {/* Fill — cream colored like the reference */}
+                  {hasData && <path d={arc(START, endAngle)} fill="none" stroke="#F4E7D5" strokeWidth={SW} strokeLinecap="round"/>}
+                </svg>
+              );
+            })()}
+          </div>
+
+          {/* pH — Supersaturated Full Rainbow Spectrum */}
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6">
+            <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60 mb-4">{t('phLevelTitle')}</p>
+            <p className="font-heading text-7xl text-neo-cream leading-none mb-2">
+              {latest?.phLevel && latest.phLevel !== '-' ? latest.phLevel : '--'}
+            </p>
+            {(() => {
+              const phVal = latest?.phLevel && latest.phLevel !== '-' ? parseFloat(latest.phLevel) : null;
+              const pct = phVal !== null ? Math.min(97, Math.max(3, (phVal / 14) * 100)) : null;
+              const label = phVal === null ? null
+                : phVal < 6   ? t('acidic')
+                : phVal > 7.5 ? t('alkaline')
+                : t('idealPh');
+              return (
+                <div className="mt-4">
+                  {label && <p className="font-subheading text-[10px] uppercase tracking-widest text-neo-cream/50 mb-4">{label}</p>}
+                  {/* Triangle pointer above bar */}
+                  <div className="relative mb-0" style={{height:'16px'}}>
+                    {pct !== null && (
+                      <div
+                        className="absolute bottom-0 transition-all duration-500"
+                        style={{left:`calc(${pct}% - 7px)`}}
+                      >
+                        <svg width="14" height="10" viewBox="0 0 14 10">
+                          <polygon points="7,10 0,0 14,0" fill="#F4E7D5"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  {/* Bar with vertical line marker */}
+                  <div
+                    className="relative h-10 rounded-full overflow-hidden"
+                    style={{
+                      background: 'linear-gradient(to right,'
+                        + 'hsl(0,100%,45%),'     /* vivid red */
+                        + 'hsl(20,100%,50%),'    /* vivid orange-red */
+                        + 'hsl(36,100%,50%),'    /* vivid orange */
+                        + 'hsl(55,100%,48%),'    /* vivid yellow */
+                        + 'hsl(90,100%,38%),'    /* vivid yellow-green */
+                        + 'hsl(130,100%,38%),'   /* vivid green */
+                        + 'hsl(175,100%,38%),'   /* vivid cyan-green */
+                        + 'hsl(200,100%,45%),'   /* vivid cyan */
+                        + 'hsl(240,100%,55%),'   /* vivid blue */
+                        + 'hsl(270,100%,50%)'    /* vivid violet */
+                      + ')'
+                    }}
+                  >
+                    {pct !== null && (
+                      <div
+                        className="absolute top-0 bottom-0 w-0.5 bg-white/70 transition-all duration-500 z-10"
+                        style={{left:`${pct}%`}}
+                      />
+                    )}
+                  </div>
+                  <div className="flex justify-between mt-2">
+                    <span className="font-body text-[10px] text-neo-cream/50">0 (ACIDIC)</span>
+                    <span className="font-body text-[10px] text-neo-cream/50">7 (NEUTRAL)</span>
+                    <span className="font-body text-[10px] text-neo-cream/50">14 (ALKALINE)</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-2">
+              );
+            })()}
+          </div>
+
+
+          {/* NPK LEVELS */}
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6 sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-between mb-6">
+              <p className="font-subheading font-bold text-sm uppercase tracking-widest text-neo-cream">
+                {t('npkLevels')}
+              </p>
+              <span className="font-subheading text-[10px] uppercase tracking-widest text-neo-cream/50 bg-neo-surface-2 border border-neo-cream/20 px-2 py-1 rounded-md">{t('mockedData')}</span>
+            </div>
+            <div className="space-y-5">
+              {[
+                { label: 'N (Nitrogen)', key: 'nitrogen', max: 150 },
+                { label: 'P (Phosphorus)', key: 'phosphorus', max: 80 },
+                { label: 'K (Potassium)', key: 'potassium', max: 200 },
+              ].map(({ label, key, max }) => {
+                const raw = latest?.[key];
+                const val = raw && raw !== '-' ? parseFloat(raw) : null;
+                const pct = val !== null ? Math.min(100, (val / max) * 100) : 0;
+                return (
+                  <div key={key}>
+                    <div className="flex items-baseline justify-between mb-2">
+                      <span className="font-body text-neo-cream/80 text-sm">{label}</span>
+                      <span className="font-subheading font-bold text-neo-cream text-sm">
+                        {val !== null ? `${raw} mg/kg` : '-- mg/kg'}
+                      </span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-neo-surface-2 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-neo-green-dark transition-all duration-700"
+                        style={{width: `${pct}%`}}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* WEATHER CARD */}
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6 sm:col-span-2 lg:col-span-1">
+            {(() => {
+              // Weather icon SVGs keyed by WMO code range or description
+              const WeatherIcon = ({ code, size = 48, className = '' }) => {
+                const s = size;
+                if (code === null || code === undefined) {
+                  // No data — dashes
+                  return <svg width={s} height={s} viewBox="0 0 48 48" className={className}><text x="50%" y="55%" textAnchor="middle" fill="currentColor" fontSize="22" fontWeight="bold">--</text></svg>;
+                }
+                const c = Number(code);
+                // Sunny / clear
+                if (c === 0) return (
+                  <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+                    <circle cx="24" cy="24" r="8" stroke="currentColor" strokeWidth="2.5"/>
+                    {[0,45,90,135,180,225,270,315].map(a => { const r=Math.PI*a/180; return <line key={a} x1={24+13*Math.cos(r)} y1={24+13*Math.sin(r)} x2={24+17*Math.cos(r)} y2={24+17*Math.sin(r)} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>; })}
+                  </svg>
+                );
+                // Partly cloudy
+                if (c <= 2) return (
+                  <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+                    <circle cx="18" cy="18" r="6" stroke="currentColor" strokeWidth="2"/>
+                    {[0,60,120,180,240,300].map(a => { const r=Math.PI*a/180; return <line key={a} x1={18+9*Math.cos(r)} y1={18+9*Math.sin(r)} x2={18+12*Math.cos(r)} y2={18+12*Math.sin(r)} stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>; })}
+                    <rect x="16" y="24" width="20" height="10" rx="5" fill="currentColor" opacity="0.25"/>
+                    <path d="M14 34 Q14 28 20 28 Q21 24 26 24 Q32 24 32 30 Q36 30 36 34 Z" stroke="currentColor" strokeWidth="2" fill="none"/>
+                  </svg>
+                );
+                // Overcast
+                if (c === 3) return (
+                  <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+                    <path d="M10 32 Q10 24 18 24 Q20 18 28 18 Q38 18 38 28 Q44 28 44 34 Q44 38 10 38 Q8 38 8 34 Z" stroke="currentColor" strokeWidth="2.2" fill="none"/>
+                  </svg>
+                );
+                // Rain (51-67, 80-82)
+                if ((c>=51&&c<=67)||(c>=80&&c<=82)) return (
+                  <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+                    <path d="M10 26 Q10 18 18 18 Q20 12 28 12 Q38 12 38 22 Q44 22 44 28 Q44 32 38 32 H10 Q8 32 8 28 Z" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    {[[16,36],[22,40],[28,36],[34,40]].map(([x,y],i)=><line key={i} x1={x} y1="34" x2={x-2} y2={y} stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>)}
+                  </svg>
+                );
+                // Thunderstorm (95-99)
+                if (c>=95) return (
+                  <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+                    <path d="M10 26 Q10 18 18 18 Q20 12 28 12 Q38 12 38 22 Q44 22 44 28 Q44 32 38 32 H10 Q8 32 8 28 Z" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    <path d="M26 32 L22 40 L26 40 L22 48" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                );
+                // Snow (71-77, 85-86)
+                if ((c>=71&&c<=77)||(c>=85&&c<=86)) return (
+                  <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+                    <path d="M10 26 Q10 18 18 18 Q20 12 28 12 Q38 12 38 22 Q44 22 44 28 Q44 32 38 32 H10 Q8 32 8 28 Z" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    {[[16,36],[22,39],[28,36],[34,39]].map(([x,y],i)=><text key={i} x={x-3} y={y} fontSize="8" fill="currentColor">*</text>)}
+                  </svg>
+                );
+                // Foggy (45,48)
+                if (c===45||c===48) return (
+                  <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+                    {[18,24,30].map(y=><line key={y} x1="8" y1={y} x2="40" y2={y} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>)}
+                  </svg>
+                );
+                // Default: partly cloudy
+                return (
+                  <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+                    <path d="M14 34 Q14 26 22 26 Q24 20 30 20 Q38 20 38 28 Q42 28 42 34 Q42 38 14 38 Q12 38 12 34 Z" stroke="currentColor" strokeWidth="2" fill="none"/>
+                  </svg>
+                );
+              };
+
+              // Derive weather condition from temperature + humidity (simulated if no real weather API)
+              const temp = latest?.temperature && latest.temperature !== '-' ? parseFloat(latest.temperature) : null;
+              const humid = latest?.humidity && latest.humidity !== '-' ? parseFloat(latest.humidity) : null;
+              // Simulate weather code from sensor context
+              let simCode = null;
+              let conditionLabel = '--';
+              let rainfallLabel = null;
+              if (temp !== null && humid !== null) {
+                if (humid > 85) { simCode = 61; conditionLabel = t('rainy'); rainfallLabel = 'High humidity'; }
+                else if (humid > 70) { simCode = 2; conditionLabel = t('partlyCloudy'); }
+                else if (humid > 50) { simCode = 3; conditionLabel = t('overcast'); }
+                else { simCode = 0; conditionLabel = t('clear'); }
+              }
+
+              return (
+                <>
+                  <div className="flex items-center justify-between mb-5">
+                    <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60">
+                      {t('weather')}
+                    </p>
+                    {latest?.raw?.latitude && latest?.raw?.longitude && (
+                      <div className="flex items-center gap-1.5 text-neo-cream/50">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                          <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span className="font-subheading text-[10px] tracking-wider uppercase">
+                          {Number(latest.raw.latitude).toFixed(2)}, {Number(latest.raw.longitude).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Main weather display */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <WeatherIcon code={simCode} size={64} className="text-neo-cream flex-shrink-0"/>
+                    <div>
+                      <p className="font-heading text-6xl text-neo-cream leading-none">
+                        {temp !== null ? `${temp}` : '--'}<span className="text-2xl text-neo-cream/50">°C</span>
+                      </p>
+                      <p className="font-body text-neo-cream/70 text-base mt-1">{conditionLabel}</p>
+                    </div>
+                  </div>
+
+                  {rainfallLabel && (
+                    <div className="flex items-center gap-2 mb-4">
+                      <svg width="16" height="16" viewBox="0 0 48 48" fill="none" className="text-neo-cream/50 flex-shrink-0">
+                        <path d="M10 26 Q10 18 18 18 Q20 12 28 12 Q38 12 38 22 Q44 22 44 28 Q44 32 38 32 H10 Q8 32 8 28 Z" stroke="currentColor" strokeWidth="2.5" fill="none"/>
+                        {[[16,36],[22,40],[28,36]].map(([x,y],i)=><line key={i} x1={x} y1="34" x2={x-2} y2={y} stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>)}
+                      </svg>
+                      <span className="font-body text-neo-cream/50 text-xs">{rainfallLabel}</span>
+                    </div>
+                  )}
+
+                  {/* Divider */}
+                  <div className="border-t border-neo-cream/15 pt-4">
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      {[
+                        { day: t('today'), code: simCode, t: temp },
+                        { day: t('tomorrow'), code: simCode !== null ? (simCode === 0 ? 2 : simCode) : null, t: temp !== null ? temp + 2 : null },
+                        { day: new Date(Date.now()+172800000).toLocaleDateString('en',{weekday:'short'}).toUpperCase(), code: simCode !== null ? 61 : null, t: temp !== null ? temp - 3 : null },
+                      ].map(({ day, code, t }, i) => (
+                        <div key={i}>
+                          <p className="font-subheading text-[10px] uppercase tracking-widest text-neo-cream/50 mb-2">{day}</p>
+                          <WeatherIcon code={code} size={28} className="text-neo-cream mx-auto mb-2"/>
+                          <p className="font-heading text-xl text-neo-cream">{t !== null ? `${Math.round(t)}` : '--'}<span className="text-xs text-neo-cream/50">°</span></p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+
+          {/* SOIL TEMPERATURE */}
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6">
+            <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60 mb-4">
+              {t('soilTemperatureTitle')}
+            </p>
+            {/* Big number + unit */}
+            <div className="flex items-baseline gap-3 mb-4">
+              <p className="font-heading text-7xl text-neo-cream leading-none">
+                {latest?.soilTemp && latest.soilTemp !== '-' ? latest.soilTemp : '--'}
+              </p>
+              {latest?.soilTemp && latest.soilTemp !== '-' && (
+                <span className="font-subheading text-xl text-neo-cream/60">°C</span>
+              )}
+            </div>
+            {/* Status badge */}
+            {latest?.soilTemp && latest.soilTemp !== '-' && (() => {
+              const v = parseFloat(latest.soilTemp);
+              const status = v < 15 ? 'COLD' : v > 30 ? 'HOT' : 'OPTIMAL';
+              const badgeColor = status === 'OPTIMAL'
+                ? 'border-neo-green-dark text-neo-green-light'
+                : 'border-red-500/60 text-red-400';
+              return (
+                <span className={`font-subheading font-bold text-[11px] uppercase tracking-widest px-3 py-1 rounded-full border inline-block mb-6 ${badgeColor}`}
+                  style={{backgroundImage:'none', backgroundColor:'transparent'}}>
+                  {status}
+                </span>
+              );
+            })()}
+            {/* Green gradient range bar */}
+            {(() => {
+              const TEMP_MAX = 50.0;
+              const tempVal = latest?.soilTemp && latest.soilTemp !== '-' ? parseFloat(latest.soilTemp) : null;
+              const pct = tempVal !== null ? Math.min(97, Math.max(3, (tempVal / TEMP_MAX) * 100)) : null;
+              return (
+                <div className="mt-auto">
+                  {/* Oval marker pointer */}
+                  <div className="relative mb-0" style={{height:'16px'}}>
+                    {pct !== null && (
+                      <div
+                        className="absolute bottom-0 w-5 h-5 rounded-full border-2 border-[#010101] shadow-lg transition-all duration-500 z-10"
+                        style={{
+                          left: `calc(${pct}% - 10px)`,
+                          background: '#F4E7D5'
+                        }}
+                      />
+                    )}
+                  </div>
+                  {/* Bar: bright green (left) → dark green (right) */}
+                  <div
+                    className="relative h-5 rounded-full overflow-hidden"
+                    style={{
+                      background: 'linear-gradient(to right, #22c55e, #16a34a, #15803d, #166534, #14532d)'
+                    }}
+                  />
+                  {/* Range labels */}
+                  <div className="flex justify-between mt-2">
+                    <span className="font-body text-[10px] text-neo-cream/40">0°C</span>
+                    <span className="font-body text-[10px] text-neo-cream/40">Optimal: 15°C – 30°C</span>
+                    <span className="font-body text-[10px] text-neo-cream/40">50°C</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+        </div>
+
+        {/* ── STATUS LOG ───────────────────────────────────────────────── */}
+        {statusMessage && (
+          <div className="neo-card border-l-4 border-neo-green-dark rounded-2xl p-4 mb-6 font-body text-neo-cream/80 text-sm">
+            {statusMessage}
+          </div>
+
+        )}
+
+        {/* 2-column: [DEVICE (1/3)] [DEVICE INFO (2/3)] */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+
+          {/* Col 1 — Device card (with query textarea) */}
+          <div className="neo-card lg:col-span-1" style={{backgroundImage:'none',backgroundColor:'rgba(21,122,38,0.12)',border:'2px solid #157A26',borderRadius:'1rem',boxShadow:'4px 4px 0px #157A26',padding:'1.5rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
+            <p className="font-subheading text-xs uppercase tracking-widest text-neo-green-light">
+              {t('deviceTitle')}
+            </p>
+            {deviceId ? (
+              <>
+                <p className="font-body text-sm text-neo-green-light font-bold break-all">{deviceId}</p>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={handleGetData}
+                    disabled={loading}
+                    className="w-full bg-neo-green-dark text-neo-cream border border-neo-green-light rounded-xl py-2.5 text-xs font-bold font-subheading uppercase tracking-widest transition-all hover:bg-neo-cream hover:text-neo-dark disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? t('reading') : t('getData')}
+                  </button>
+                  <button
+                    onClick={handleLoadMockData}
+                    className="w-full bg-[#111111] text-neo-cream border border-neo-cream/40 rounded-xl py-2.5 text-xs font-bold font-subheading uppercase tracking-widest transition-all hover:bg-neo-cream hover:text-neo-dark"
+                    style={{backgroundImage:'none'}}
+                  >
+                    {t('demoDataBtn')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeviceId('');
+                      localStorage.removeItem('captured_device_id');
+                      setManualDeviceId('');
+                      setStatusMessage(language === 'hi' ? 'डिवाइस ID हटाया — नया ID डालें' : 'Device cleared — enter new ID');
+                      setTimeout(() => setStatusMessage(''), 3000);
+                    }}
+                    className="w-full bg-transparent text-neo-cream/50 border border-neo-cream/20 rounded-xl py-2 text-[11px] font-subheading uppercase tracking-widest transition-all hover:border-neo-cream/60 hover:text-neo-cream/80"
+                  >
+                    {t('changeDevice')}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <form onSubmit={handleManualDeviceIdSubmit} className="space-y-3">
+                <p className="text-xs text-neo-cream/60 font-body">
+                  {language === 'hi' ? 'डिवाइस ID डालें' : 'Enter Device ID'}
+                </p>
                 <input
                   type="text"
                   value={manualDeviceId}
                   onChange={(e) => setManualDeviceId(e.target.value)}
-                  placeholder={language === 'en' ? 'Enter Device ID (e.g., ESP1)' : 'डिवाइस ID लिखें (जैसे ESP1)'}
-                  className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-mono"
+                  placeholder="ESP32_FIELD_UNIT_1"
+                  className="w-full border border-neo-cream/40 rounded-xl px-3 py-2.5 text-xs font-body text-neo-cream focus:outline-none focus:border-neo-green-light"
+                  style={{backgroundColor:'#111111',backgroundImage:'none'}}
                   required
                 />
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200 active:scale-95 whitespace-nowrap"
+                  className="w-full bg-neo-green-dark text-neo-cream border border-neo-green-light rounded-xl py-2.5 text-xs font-bold uppercase font-subheading tracking-widest"
                 >
-                  {language === 'en' ? '🔗 Connect' : '🔗 जोड़ें'}
+                  {language === 'hi' ? 'जोड़ें' : 'CONNECT'}
                 </button>
-              </div>
-
-              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-gray-600">
-                  💡 <strong>{language === 'en' ? 'Tip:' : 'टिप:'}</strong>{' '}
-                  {language === 'en'
-                    ? 'The device ID will be shown on the LCD/Screen of the tool. Check your device display.'
-                    : 'डिवाइस ID टूल की स्क्रीन पर दिखेगी। अपने डिवाइस की स्क्रीन देखें।'}
-                </p>
-              </div>
-            </form>
-          )}
-        </div>
-
-        {/* Device Information Section */}
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
-          <div className="mb-4">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800">{t('deviceInformation')}</h2>
-          </div>
-
-          {/* Environmental Data Table - Fixed height with scroll */}
-          <div className="overflow-x-auto overflow-y-auto -mx-4 sm:mx-0 max-h-[400px] sm:max-h-[500px] border border-gray-300 rounded-lg">
-            <table className="w-full border-collapse text-sm sm:text-base">
-              <thead className="sticky top-0 z-10">
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
-                    {t('device')}
-                  </th>
-                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
-                    {t('temperature')}
-                  </th>
-                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
-                    {t('humidity')}
-                  </th>
-                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
-                    {t('soil')}
-                  </th>
-                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
-                    {t('soilTemp')}
-                  </th>
-                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
-                    {t('light')}
-                  </th>
-                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
-                    {t('gps')}
-                  </th>
-                  <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left font-semibold text-gray-700 whitespace-nowrap bg-gray-100">
-                    {t('timestamp')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {devices.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="border border-gray-300 px-4 py-8 text-center text-gray-500 italic">
-                      {t('noDataAvailable') || 'No data available. Click "Get Data" to fetch from device.'}
-                    </td>
-                  </tr>
-                ) : (
-                  (showAllRows ? devices : devices.slice(0, 4)).map((device, index) => (
-                    <tr key={`${device.id}-${device.timestamp}-${index}`} className="hover:bg-gray-50 bg-white">
-                      <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap">{device.id}</td>
-                      <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.temperature}</td>
-                      <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.humidity}</td>
-                      <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.soil}</td>
-                      <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.soilTemp}</td>
-                      <td className="border border-gray-300 px-2 sm:px-4 py-2">{device.light}</td>
-                      <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm">{device.gps}</td>
-                      <td className="border border-gray-300 px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm">{device.timestamp}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Show More/Less Button */}
-          {devices.length > 4 && (
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => setShowAllRows(!showAllRows)}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200 active:scale-95"
-              >
-                {showAllRows 
-                  ? (language === 'en' ? '📋 Show Less' : '📋 कम दिखाएं')
-                  : (language === 'en' ? `📋 See Complete Table (${devices.length} rows)` : `📋 पूरी टेबल देखें (${devices.length} पंक्तियाँ)`)}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Status Log */}
-        {statusMessage && (
-          <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-            <p className="text-sm sm:text-base text-gray-700">{statusMessage}</p>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">
-              {t('dataUpdated')} {new Date().toLocaleTimeString()}
-            </p>
-            <p className="text-xs sm:text-sm text-gray-600">{t('readyForAnalysis')}</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* Left Column - Crop Selection and Query */}
-          <div className="space-y-4 sm:space-y-6">
-            {/* Crop Type Selector */}
-            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">{t('selectCropType')}</h3>
-              <select
-                value={selectedCrop}
-                onChange={(e) => setSelectedCrop(e.target.value)}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-              >
-                <option value="">{t('chooseCrop')}</option>
-                <option value="wheat">{language === 'hi' ? '🌾 गेहूं (Wheat)' : language === 'ta' ? '🌾 கோதுமை' : '🌾 Wheat'}</option>
-                <option value="rice">{language === 'hi' ? '🍚 धान (Rice)' : language === 'ta' ? '🍚 நெல்' : '🍚 Rice'}</option>
-                <option value="maize">{language === 'hi' ? '🌽 मक्का (Maize)' : language === 'ta' ? '🌽 சோளம்' : '🌽 Maize/Corn'}</option>
-                <option value="sugarcane">{language === 'hi' ? '🎋 गन्ना (Sugarcane)' : language === 'ta' ? '🎋 கரும்பு' : '🎋 Sugarcane'}</option>
-                <option value="cotton">{language === 'hi' ? '☁️ कपास (Cotton)' : language === 'ta' ? '☁️ பருத்தி' : '☁️ Cotton'}</option>
-                <option value="soybean">{language === 'hi' ? '🫘 सोयाबीन (Soybean)' : language === 'ta' ? '🫘 சோயாபீன்' : '🫘 Soybean'}</option>
-                <option value="chickpea">{language === 'hi' ? '🫛 चना (Chickpea)' : language === 'ta' ? '🫛 கொண்டைக்கடலை' : '🫛 Chickpea/Gram'}</option>
-                <option value="pigeon-pea">{language === 'hi' ? '🫘 तूर/अरहर (Pigeon Pea)' : language === 'ta' ? '🫘 துவரை' : '🫘 Pigeon Pea/Arhar'}</option>
-                <option value="lentil">{language === 'hi' ? '🫛 मसूर (Lentil)' : language === 'ta' ? '🫛 பருப்பு' : '🫛 Lentil'}</option>
-                <option value="groundnut">{language === 'hi' ? '🥜 मूंगफली (Groundnut)' : language === 'ta' ? '🥜 நிலக்கடலை' : '🥜 Groundnut/Peanut'}</option>
-                <option value="mustard">{language === 'hi' ? '🌼 सरसों (Mustard)' : language === 'ta' ? '🌼 கடுகு' : '🌼 Mustard'}</option>
-                <option value="potato">{language === 'hi' ? '🥔 आलू (Potato)' : language === 'ta' ? '🥔 உருளைக்கிழங்கு' : '🥔 Potato'}</option>
-                <option value="onion">{language === 'hi' ? '🧅 प्याज (Onion)' : language === 'ta' ? '🧅 வெங்காயம்' : '🧅 Onion'}</option>
-                <option value="tomato">{language === 'hi' ? '🍅 टमाटर (Tomato)' : language === 'ta' ? '🍅 தக்காளி' : '🍅 Tomato'}</option>
-                <option value="chili">{language === 'hi' ? '🌶️ मिर्च (Chili)' : language === 'ta' ? '🌶️ மிளகாய்' : '🌶️ Chili/Pepper'}</option>
-                <option value="millet">{language === 'hi' ? '🌾 बाजरा (Millet)' : language === 'ta' ? '🌾 கம்பு' : '🌾 Pearl Millet/Bajra'}</option>
-                <option value="sorghum">{language === 'hi' ? '🌾 ज्वार (Sorghum)' : language === 'ta' ? '🌾 சோளம்' : '🌾 Sorghum/Jowar'}</option>
-                <option value="tea">{language === 'hi' ? '🍵 चाय (Tea)' : language === 'ta' ? '🍵 தேநீர்' : '🍵 Tea'}</option>
-                <option value="coffee">{language === 'hi' ? '☕ कॉफी (Coffee)' : language === 'ta' ? '☕ காபி' : '☕ Coffee'}</option>
-                <option value="banana">{language === 'hi' ? '🍌 केला (Banana)' : language === 'ta' ? '🍌 வாழை' : '🍌 Banana'}</option>
-                <option value="mango">{language === 'hi' ? '🥭 आम (Mango)' : language === 'ta' ? '🥭 மாம்பழம்' : '🥭 Mango'}</option>
-              </select>
-            </div>
-
-            {/* Crop Stage and Field Area */}
-            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">
-                {language === 'hi' ? 'फसल का चरण और एरिया' : language === 'ta' ? 'பயிர் நிலை மற்றும் வயல் பரப்பு' : 'Crop Stage & Field Area'}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-xs sm:text-sm text-gray-600 mb-2">
-                    {language === 'hi' ? 'फसल का चरण' : language === 'ta' ? 'பயிர் நிலை' : 'Crop Stage'}
-                  </label>
-                  <select
-                    value={cropStage}
-                    onChange={(e) => setCropStage(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  >
-                    <option value="">{language === 'hi' ? 'चुनें' : language === 'ta' ? 'தேர்ந்தெடுக்கவும்' : 'Select'}</option>
-                    <option value="sowing">{language === 'hi' ? '🌱 बुवाई (Sowing)' : language === 'ta' ? '🌱 விதைத்தல்' : '🌱 Sowing'}</option>
-                    <option value="germination">{language === 'hi' ? '🌾 अंकुरण (Germination)' : language === 'ta' ? '🌾 முளைத்தல்' : '🌾 Germination'}</option>
-                    <option value="tillering">{language === 'hi' ? '🌿 कल्ले फूटना (Tillering)' : language === 'ta' ? '🌿 கிளை பிரித்தல்' : '🌿 Tillering'}</option>
-                    <option value="vegetative">{language === 'hi' ? '🍃 बढ़ोतरी (Growth)' : language === 'ta' ? '🍃 வளர்ச்சி' : '🍃 Vegetative Growth'}</option>
-                    <option value="flowering">{language === 'hi' ? '🌸 फूल आना (Flowering)' : language === 'ta' ? '🌸 பூக்கும் நிலை' : '🌸 Flowering'}</option>
-                    <option value="grain-filling">{language === 'hi' ? '🌾 दाना भरना (Grain Filling)' : language === 'ta' ? '🌾 தானியம் நிரம்புதல்' : '🌾 Grain Filling'}</option>
-                    <option value="ripening">{language === 'hi' ? '🌾 पकना (Ripening)' : language === 'ta' ? '🌾 பழுத்தல்' : '🌾 Ripening'}</option>
-                    <option value="harvesting">{language === 'hi' ? '🚜 कटाई (Harvesting)' : language === 'ta' ? '🚜 அறுவடை' : '🚜 Harvesting'}</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm text-gray-600 mb-2">
-                    {language === 'hi' ? 'खेत का क्षेत्रफल' : 'Field Area'}
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={fieldArea}
-                      onChange={(e) => setFieldArea(e.target.value)}
-                      placeholder={language === 'hi' ? 'जैसे: 5' : 'e.g., 5'}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-                    <select
-                      value={areaUnit}
-                      onChange={(e) => setAreaUnit(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
-                    >
-                      <option value="bigha">{language === 'hi' ? 'बीघा' : 'Bigha'}</option>
-                      <option value="acre">{language === 'hi' ? 'एकड़' : 'Acre'}</option>
-                      <option value="hectare">{language === 'hi' ? 'हेक्टेयर' : 'Hectare'}</option>
-                    </select>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {language === 'hi' 
-                      ? `1 बीघा ≈ 0.25 हेक्टेयर, 1 एकड़ ≈ 0.4 हेक्टेयर` 
-                      : `1 Bigha ≈ 0.25 ha, 1 Acre ≈ 0.4 ha`}
-                  </p>
-                </div>
-              </div>
-            </div>
-
+              </form>
+            )}
             {/* Additional Query */}
-            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">{t('additionalQuery')}</h3>
+            <div className="border-t border-neo-green-dark/40 pt-4 flex flex-col flex-1">
+              <p className="font-subheading text-[10px] uppercase tracking-widest text-neo-green-light/60 mb-2">
+                {t('additionalQuery')}
+              </p>
               <textarea
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('queryPlaceholder')}
-                rows="5"
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm sm:text-base"
-              ></textarea>
+                className="w-full flex-1 min-h-[160px] text-neo-cream border border-neo-cream/20 rounded-xl px-3 py-3 focus:outline-none focus:border-neo-green-light/60 resize-none font-body text-xs leading-relaxed"
+                style={{backgroundColor:'rgba(21,122,38,0.08)', backgroundImage:'none'}}
+              />
             </div>
           </div>
 
-          {/* Right Column - pH Scale */}
-          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
-            <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">{t('soilPHScale')}</h3>
-            <div className="flex justify-between gap-1 sm:gap-2 mb-3 sm:mb-4">
-              {phColors.map((ph) => (
-                <div key={ph.value} className="flex-1">
-                  <div 
-                    onClick={() => setSelectedPH(ph.value)}
-                    className={`${ph.color} h-16 sm:h-20 md:h-24 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs sm:text-sm md:text-base cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 ${selectedPH === ph.value ? 'ring-4 ring-yellow-400 scale-105' : ''}`}
+          {/* Col 2 — Device Info (Takes up remaining 2 columns) */}
+          <div className="space-y-4 lg:col-span-2">
+            {/* Sensor data table (collapsible) */}
+            {devices.length > 0 && (
+              <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] overflow-hidden">
+                <div className="p-4 border-b border-neo-cream/20 flex items-center justify-between">
+                  <h3 className="font-subheading font-bold text-sm uppercase tracking-widest text-neo-cream">
+                    {t('deviceInformation')}
+                  </h3>
+                  <button
+                    onClick={() => setShowAllRows(!showAllRows)}
+                    className="text-xs font-body text-neo-cream/50 hover:text-neo-cream"
                   >
-                    {ph.value}
-                  </div>
+                    {showAllRows ? 'Show Less' : `All (${devices.length})`}
+                  </button>
                 </div>
-              ))}
-            </div>
-            {selectedPH && (
-              <p className="text-xs sm:text-sm text-green-600 text-center font-semibold mb-2">
-                ✓ {language === 'hi' ? `पीएच ${selectedPH} चुना गया` : language === 'ta' ? `pH ${selectedPH} தேர்ந்தெடுக்கப்பட்டது` : `pH ${selectedPH} selected`}
-              </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-body">
+                    <thead>
+                      <tr style={{backgroundColor:'#0d0d0d'}} className="text-neo-cream/60 uppercase tracking-wide">
+                        {['Device','Temp','Humid','Soil','N','P','K','pH','EC','Time'].map(h => (
+                          <th key={h} className="px-4 py-3 text-left font-subheading whitespace-nowrap border-b border-neo-cream/10">{h}</th>
+                        ))}
+                      </tr>
+
+                    </thead>
+                    <tbody>
+                      {(showAllRows ? devices : devices.slice(0, 4)).map((d, i) => (
+                        <tr key={`${d.id}-${i}`} className="border-b border-neo-cream/10 transition-colors" style={{backgroundColor: i%2===0 ? '#111111' : '#0d0d0d'}}>
+                          <td className="px-4 py-3 whitespace-nowrap text-neo-cream">{d.id}</td>
+                          <td className="px-4 py-3 text-neo-cream">{d.temperature}</td>
+                          <td className="px-4 py-3 text-neo-cream">{d.humidity}</td>
+                          <td className="px-4 py-3 text-neo-cream">{d.soil}</td>
+                          <td className="px-4 py-3 text-neo-green-light">{d.nitrogen}</td>
+                          <td className="px-4 py-3 text-neo-green-light">{d.phosphorus}</td>
+                          <td className="px-4 py-3 text-neo-green-light">{d.potassium}</td>
+                          <td className="px-4 py-3 text-neo-green-light">{d.phLevel}</td>
+                          <td className="px-4 py-3 text-neo-green-light">{d.ec}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-neo-cream/50">{d.timestamp}</td>
+                        </tr>
+
+                      ))}
+                      {/* Empty row padding so the table doesn't collapse and looks structured */}
+                      {(!showAllRows && devices.length < 4) && Array.from({ length: 4 - devices.length }).map((_, i) => (
+                        <tr key={`empty-${i}`} className="border-b border-neo-cream/10 transition-colors" style={{backgroundColor: (devices.length + i)%2===0 ? '#111111' : '#0d0d0d'}}>
+                          <td className="px-4 py-3 whitespace-nowrap text-neo-cream/20">--</td>
+                          <td className="px-4 py-3 text-neo-cream/20">--</td>
+                          <td className="px-4 py-3 text-neo-cream/20">--</td>
+                          <td className="px-4 py-3 text-neo-cream/20">--</td>
+                          <td className="px-4 py-3 text-neo-green-light/20">--</td>
+                          <td className="px-4 py-3 text-neo-green-light/20">--</td>
+                          <td className="px-4 py-3 text-neo-green-light/20">--</td>
+                          <td className="px-4 py-3 text-neo-green-light/20">--</td>
+                          <td className="px-4 py-3 text-neo-green-light/20">--</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-neo-cream/20">--</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
             )}
-            <p className="text-xs sm:text-sm text-blue-600 text-center font-semibold mb-2">
-              📋 {t('phInstruction')}
-            </p>
-            <p className="text-xs sm:text-sm text-gray-600 text-center italic">
-              {t('phNote')}
-            </p>
+
+            {/* Export / Clear buttons */}
+            {devices.length > 0 && (
+              <div className="flex gap-3">
+                <button
+                  onClick={handleExportJSON}
+                  className="flex-1 neo-card border-2 border-neo-cream text-neo-cream rounded-xl py-3 text-xs font-bold font-subheading uppercase shadow-[4px_4px_0px_#F4E7D5] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-[2px_2px_0px_#F4E7D5] transition-all"
+                >
+                  {language === 'hi' ? 'JSON निर्यात' : 'EXPORT JSON'}
+                </button>
+                <button
+                  onClick={handleClearData}
+                  className="flex-1 border-2 border-red-500/50 text-red-400 rounded-xl py-3 text-xs font-bold font-subheading uppercase hover:bg-red-900/20 transition-all" style={{backgroundImage:'none', backgroundColor:'transparent'}}
+                >
+                  {language === 'hi' ? 'साफ करें' : 'CLEAR'}
+                </button>
+              </div>
+
+            )}
           </div>
         </div>
 
-        {/* AI Analysis Button */}
-        <div className="mt-4 sm:mt-6">
+        {/* ── STAGE & AREA (Full Width Row) ────────────────────────────── */}
+        <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-5 mb-6">
+          <h3 className="font-subheading font-bold text-sm uppercase tracking-widest text-neo-cream mb-4">
+            {language === 'hi' ? 'चरण और क्षेत्र' : 'STAGE & AREA'}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-neo-cream/50 font-subheading uppercase tracking-wide mb-2">
+                {language === 'hi' ? 'फसल चरण' : 'Crop Stage'}
+              </label>
+              <select
+                value={cropStage}
+                onChange={(e) => setCropStage(e.target.value)}
+                className="w-full text-neo-cream border-2 border-neo-cream/60 rounded-xl px-3 py-2.5 focus:outline-none focus:border-neo-cream font-body text-sm"
+              >
+                <option value="">{language === 'hi' ? 'चुनें' : 'Select'}</option>
+                <option value="sowing">{language === 'hi' ? 'बुवाई' : 'Sowing'}</option>
+                <option value="germination">{language === 'hi' ? 'अंकुरण' : 'Germination'}</option>
+                <option value="tillering">{language === 'hi' ? 'कल्ले' : 'Tillering'}</option>
+                <option value="vegetative">{language === 'hi' ? 'बढ़ोतरी' : 'Vegetative'}</option>
+                <option value="flowering">{language === 'hi' ? 'फूल' : 'Flowering'}</option>
+                <option value="grain-filling">{language === 'hi' ? 'दाना' : 'Grain Filling'}</option>
+                <option value="ripening">{language === 'hi' ? 'पकना' : 'Ripening'}</option>
+                <option value="harvesting">{language === 'hi' ? 'कटाई' : 'Harvesting'}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-neo-cream/50 font-subheading uppercase tracking-wide mb-2">
+                {language === 'hi' ? 'खेत क्षेत्र' : 'Field Area'}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={fieldArea}
+                  onChange={(e) => setFieldArea(e.target.value)}
+                  placeholder="e.g. 5"
+                  className="flex-1 text-neo-cream border-2 border-neo-cream/60 rounded-xl px-3 py-2.5 focus:outline-none focus:border-neo-cream font-body text-sm"
+                />
+                <select
+                  value={areaUnit}
+                  onChange={(e) => setAreaUnit(e.target.value)}
+                  className="text-neo-cream border-2 border-neo-cream/60 rounded-xl px-3 py-2.5 focus:outline-none font-body text-sm"
+                >
+                  <option value="bigha">{language === 'hi' ? 'बीघा' : 'Bigha'}</option>
+                  <option value="acre">{language === 'hi' ? 'एकड़' : 'Acre'}</option>
+                  <option value="hectare">{language === 'hi' ? 'हेक्टेयर' : 'Hectare'}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── RUN AI ANALYSIS ─────────────────────────────────────────── */}
+        <div className="mb-6">
           <button
-            onClick={handleAIAnalysis}
-            disabled={aiLoading}
-            className={`w-full text-white font-bold py-3 sm:py-4 rounded-xl text-base sm:text-lg transition-colors duration-200 shadow-lg active:scale-95 ${aiLoading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+            onClick={() => {
+              // Validate device
+              if (!deviceId) {
+                setErrorPopup({
+                  show: true, type: 'error',
+                  message: language === 'hi' ? 'पहले डिवाइस ID डालें' : 'Enter Device ID first',
+                  solution: language === 'hi' ? 'ऊपर डिवाइस ID बॉक्स में टाइप करें' : 'Type your Device ID in the box above',
+                });
+                setTimeout(() => setErrorPopup({ show: false, type: '', message: '', solution: '' }), 5000);
+                return;
+              }
+              // Validate sensor data
+              if (!devices.length || !devices[0]?.raw) {
+                setErrorPopup({
+                  show: true, type: 'error',
+                  message: language === 'hi' ? 'पहले सेंसर डेटा लें' : 'Get sensor data first',
+                  solution: language === 'hi' ? '"Get Data" बटन दबाएं' : 'Click the "Get Data" or "Demo Data" button',
+                });
+                setTimeout(() => setErrorPopup({ show: false, type: '', message: '', solution: '' }), 5000);
+                return;
+              }
+
+              // Build telemetry payload
+              const lat = devices[0];
+              const raw = lat.raw || {};
+              const _n = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+              const resolvedPh = raw.ph_level ?? raw.pH ?? lat.phLevel;
+
+              const telemetryPayload = {
+                device: raw.device || raw.deviceId || raw.deviceID || lat.id || deviceId,
+                temperature: _n(raw.temperature ?? lat.temperature),
+                humidity: _n(raw.humidity ?? lat.humidity),
+                soil_moisture: _n(raw.soil_moisture ?? raw.soilMoisture ?? lat.soil),
+                soilMoisture: _n(raw.soil_moisture ?? raw.soilMoisture ?? lat.soil),
+                soilTemperature: _n(raw.soilTemperature ?? lat.soilTemp),
+                nitrogen: _n(raw.nitrogen ?? raw.n ?? lat.nitrogen),
+                phosphorus: _n(raw.phosphorus ?? raw.p ?? lat.phosphorus),
+                potassium: _n(raw.potassium ?? raw.k ?? lat.potassium),
+                ph_level: _n(resolvedPh),
+                electrical_conductivity: _n(raw.electrical_conductivity ?? raw.ec ?? lat.ec),
+                latitude: _n(raw.latitude),
+                longitude: _n(raw.longitude),
+                timestamp: raw.timestamp || Date.now(),
+              };
+
+              // Collect area
+              const convertToHectares = (area, unit) => {
+                if (!area) return null;
+                const a = parseFloat(area);
+                if (isNaN(a)) return null;
+                return unit === 'bigha' ? (a * 0.25).toFixed(2) : unit === 'acre' ? (a * 0.4047).toFixed(2) : a.toFixed(2);
+              };
+
+              // Collect farm history
+              let farmHistoryPayload = {};
+              try {
+                const p = JSON.parse(localStorage.getItem('farmerProfile') || '{}');
+                if (Array.isArray(p.crops) && p.crops[0]) {
+                  farmHistoryPayload.crop_1_name = p.crops[0].name?.trim() || null;
+                  farmHistoryPayload.crop_1_date_grown = p.crops[0].dateGrown || null;
+                }
+                if (Array.isArray(p.crops) && p.crops[1]) {
+                  farmHistoryPayload.crop_2_name = p.crops[1].name?.trim() || null;
+                  farmHistoryPayload.crop_2_date_grown = p.crops[1].dateGrown || null;
+                }
+                if (Array.isArray(p.fertilizers) && p.fertilizers[0]) {
+                  const f = p.fertilizers[0];
+                  farmHistoryPayload.fertilizer_used_name = f.name?.trim() || null;
+                  farmHistoryPayload.fertilizer_amount = f.amount ? parseFloat(f.amount) : null;
+                  farmHistoryPayload.fertilizer_unit = f.unit || null;
+                }
+              } catch {}
+
+              const requestBody = {
+                deviceId,
+                telemetry: telemetryPayload,
+                cropType: selectedCrop || 'unknown',
+                cropStage: cropStage || 'unknown',
+                fieldArea: convertToHectares(fieldArea, areaUnit) || null,
+                soilPH: telemetryPayload.ph_level || null,
+                language: language || 'en',
+                additionalQuery: query || 'None',
+                farmHistory: farmHistoryPayload,
+              };
+
+              // Navigate to the dedicated results page, passing requestBody in router state
+              navigate('/analysis-results', { state: { requestBody } });
+            }}
+            className="w-full font-body font-bold uppercase text-neo-cream text-xl sm:text-2xl py-5 rounded-2xl border-2 transition-all duration-200 bg-neo-green-dark border-neo-cream shadow-[6px_6px_0px_#F4E7D5] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[3px_3px_0px_#F4E7D5]"
           >
-            {aiLoading ? '⏳ Generating analysis...' : t('runAIAnalysis')}
+            {t('runAIAnalysis')}
           </button>
         </div>
 
-        {(aiLoading || aiError || aiResult) && (
-          <div className="mt-4 sm:mt-6 bg-white rounded-xl shadow-md p-4 sm:py-6 sm:px-6 border border-indigo-100">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
-                <span>🤖</span>
-                <span>{language === 'hi' ? 'AI जांच' : 'AI Analysis'}</span>
-              </h3>
-              {Number.isFinite(Number(aiResult?.confidence)) && (
-                <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-                  {`${Math.round(Math.max(0, Math.min(1, Number(aiResult.confidence))) * 100)}% ${language === 'hi' ? 'भरोसा' : 'confidence'}`}
-                </span>
+
+        {/* ── TERMINAL LOADING ANIMATION ──────────────────────────────── */}
+        {(aiLoading || (loadingStep > 0 && !showCropResults)) && (
+          <div className="mb-6 rounded-2xl overflow-hidden border-2 border-neo-green-dark shadow-[4px_4px_0px_#157A26]" style={{background:'#010101'}}>
+            {/* Title bar */}
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-neo-green-dark/30" style={{background:'#0a0a0a'}}>
+              <div className="w-3 h-3 rounded-full bg-red-500/60"/>
+              <div className="w-3 h-3 rounded-full bg-yellow-500/60"/>
+              <div className="w-3 h-3 rounded-full bg-green-500/60"/>
+              <span className="font-mono text-[11px] text-neo-green-light/50 ml-3 tracking-widest">
+                AGROMETRIX_AI — soil_analysis.sh
+              </span>
+              <span className="ml-auto font-mono text-[10px] text-neo-green-dark/70">{loadingStep}/{LOADING_LINES.length}</span>
+            </div>
+            {/* Body */}
+            <div className="p-5 terminal-scanlines" style={{minHeight:'280px', position:'relative'}}>
+              <p className="font-mono text-neo-green-dark/70 text-xs mb-4">
+                $ ./run_analysis --device {deviceId || 'UNKNOWN'} --mode full-spectrum
+              </p>
+              {LOADING_LINES.slice(0, loadingStep).map((line, i) => {
+                const isLast = i === loadingStep - 1;
+                const isDone = i === LOADING_LINES.length - 1;
+                return (
+                  <div key={i} className={`flex items-center gap-2 mb-1.5 transition-all duration-200 ${isLast && !isDone ? 'text-neo-green-light' : 'text-neo-green-light/45'}`}>
+                    <span className="text-neo-green-dark text-xs select-none">{'>'}</span>
+                    <span className="font-mono text-xs tracking-wide">{line}</span>
+                    {isLast && aiLoading && !isDone && (
+                      <span className="animate-blink text-neo-green-light ml-1 text-sm">█</span>
+                    )}
+                    {isDone && !aiLoading && (
+                      <span className="text-neo-green-light ml-2 text-xs font-bold">— DONE</span>
+                    )}
+                  </div>
+                );
+              })}
+              {/* waiting line when animation finished but AI still thinking */}
+              {!aiLoading && loadingStep >= LOADING_LINES.length && !showCropResults && (
+                <p className="font-mono text-neo-green-dark/50 text-xs mt-3 animate-pulse">Building results...</p>
+              )}
+              {aiLoading && loadingStep < LOADING_LINES.length && (
+                <div className="flex items-center gap-2 text-neo-green-light/30 mt-1">
+                  <span className="text-xs select-none">{'>'}</span>
+                  <span className="animate-blink text-sm text-neo-green-light">█</span>
+                </div>
               )}
             </div>
+          </div>
+        )}
 
-            {aiLoading && (
-              <p className="text-sm sm:text-base text-gray-600">
-                {language === 'hi' ? 'रुकिए, AI सुझाव तैयार कर रहा है...' : 'Please wait while the AI prepares recommendations...'}
-              </p>
-            )}
-
-            {!aiLoading && aiResult && (
-              <div className="bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-300 rounded-xl shadow-lg p-6">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 flex items-center">
-                  <span className="mr-2">🌾</span>
-                  {language === 'hi' ? 'AI सुझाव' : 'AI Recommendation'}
-                </h3>
-                <div className="prose prose-sm sm:prose max-w-none">
-                  <p className="text-sm sm:text-base text-gray-800 leading-relaxed whitespace-pre-wrap">
-                    {aiResult}
-                  </p>
+        {/* ── CROP RECOMMENDATION CARDS ────────────────────────────────── */}
+        {showCropResults && parsedResult?.top_crops?.length > 0 && (
+          <div className="mb-6 animate-fadeIn">
+            {/* Header row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="font-heading text-3xl text-neo-cream uppercase leading-none">
+                  {language === 'hi' ? 'फसल सुझाव' : language === 'ta' ? 'பயிர் பரிந்துரைகள்' : 'CROP RECOMMENDATIONS'}
+                </h2>
+                <p className="font-body text-neo-cream/35 text-xs mt-1 uppercase tracking-widest">
+                  {parsedResult.top_crops.length} crops ranked by soil match
+                </p>
+              </div>
+              {/* Companion planting toggle */}
+              <button
+                id="companion-toggle"
+                onClick={() => setCompanionMode(m => !m)}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 transition-all duration-200 flex-shrink-0 ${
+                  companionMode
+                    ? 'border-neo-green-dark bg-neo-green-dark/15 text-neo-green-light shadow-[0_0_12px_rgba(21,122,38,0.3)]'
+                    : 'border-neo-cream/20 text-neo-cream/50 hover:border-neo-cream/40'
+                }`}
+                style={{backgroundImage:'none', backgroundColor: companionMode ? 'rgba(21,122,38,0.12)' : 'transparent'}}
+              >
+                {/* Hardware switch knob */}
+                <div className={`w-11 h-6 rounded-full relative transition-all duration-200 flex-shrink-0 ${companionMode ? 'bg-neo-green-dark' : 'bg-neo-cream/15'}`}>
+                  <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-200 ${companionMode ? 'left-6 bg-neo-cream shadow-[0_0_6px_rgba(244,231,213,0.8)]' : 'left-1 bg-neo-cream/40'}`}/>
                 </div>
-              </div>
-            )}
+                <span className="font-subheading text-[11px] uppercase tracking-widest whitespace-nowrap">
+                  {language === 'hi' ? 'साथी पौधारोपण' : language === 'ta' ? 'துணை நடவு' : 'COMPANION PLANTING'}
+                </span>
+              </button>
+            </div>
 
-            {/* Old complex format - keeping for reference, delete if not needed */}
-            {false && aiResult && aiResult.status && (
-              <div className="space-y-4 sm:space-y-6">
-                {/* Status Badge */}
-                {aiResult.status && (
-                  <div className={`border px-4 py-3 rounded-lg text-sm sm:text-base font-bold text-center ${
-                    aiResult.status === 'GOOD' ? 'bg-green-50 border-green-300 text-green-800' :
-                    aiResult.status === 'CAUTION' ? 'bg-yellow-50 border-yellow-300 text-yellow-800' :
-                    'bg-red-50 border-red-300 text-red-800'
-                  }`}>
-                    {aiResult.status === 'GOOD' ? '✅ ' : aiResult.status === 'CAUTION' ? '⚠️ ' : '🚨 '}
-                    {aiResult.status}
-                  </div>
-                )}
+            {/* Cards grid — top 3 always visible */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              {(showMoreCrops ? parsedResult.top_crops : parsedResult.top_crops.slice(0, 3)).map((crop, i) => {
+                const rank = i + 1;
+                const matchPct = Number(crop.match_percentage) || 0;
+                const isTop = rank === 1;
+                return (
+                  <div
+                    key={i}
+                    className={`relative rounded-2xl border-2 p-5 flex flex-col transition-all duration-200 hover:-translate-y-0.5 ${
+                      isTop
+                        ? 'border-neo-green-dark shadow-[4px_4px_0px_#157A26]'
+                        : rank <= 3
+                        ? 'border-neo-cream/25 shadow-[3px_3px_0px_rgba(244,231,213,0.12)]'
+                        : 'border-neo-cream/12 opacity-80'
+                    }`}
+                    style={{background:'#111111', backgroundImage:'none'}}
+                  >
+                    {/* Rank badge */}
+                    <span className={`absolute top-4 right-4 font-mono text-xs font-bold px-2 py-1 rounded-lg ${
+                      rank === 1 ? 'bg-neo-green-dark text-neo-cream' :
+                      rank === 2 ? 'bg-neo-cream/10 text-neo-cream/60 border border-neo-cream/20' :
+                                   'bg-transparent text-neo-cream/25 border border-neo-cream/10'
+                    }`}>
+                      #{String(rank).padStart(2,'0')}
+                    </span>
 
-                {/* Query Answer */}
-                {aiResult.query_answer && (
-                  <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg text-sm sm:text-base">
-                    <strong>{language === 'hi' ? '💬 आपके सवाल का जवाब:' : '💬 Answer:'}</strong>
-                    <p className="mt-1">{aiResult.query_answer}</p>
-                  </div>
-                )}
-
-                {/* Immediate Actions */}
-                {Array.isArray(aiResult.immediate_actions) && aiResult.immediate_actions.length > 0 && (
-                  <div>
-                    <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? '🎯 जल्दी करें' : '🎯 Immediate Actions'}
-                    </h4>
-                    <div className="space-y-2">
-                      {aiResult.immediate_actions.map((item, idx) => (
-                        <div key={idx} className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-semibold text-indigo-900">{item.action}</span>
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              item.confidence === 'HIGH' ? 'bg-green-200 text-green-800' :
-                              item.confidence === 'MEDIUM' ? 'bg-yellow-200 text-yellow-800' :
-                              'bg-gray-200 text-gray-800'
-                            }`}>{item.confidence}</span>
-                          </div>
-                          <p className="text-sm text-gray-700">{item.what}</p>
-                          <p className="text-xs text-gray-500 mt-1">⏰ {item.when}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Warnings */}
-                {Array.isArray(aiResult.warnings) && aiResult.warnings.length > 0 && (
-                  <div>
-                    <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? '⚠️ सावधानी' : '⚠️ Warnings'}
-                    </h4>
-                    <div className="space-y-2">
-                      {aiResult.warnings.map((item, idx) => (
-                        <div key={idx} className={`border rounded-lg p-3 ${
-                          item.severity === 'HIGH' ? 'bg-red-50 border-red-300' :
-                          item.severity === 'MEDIUM' ? 'bg-orange-50 border-orange-300' :
-                          'bg-yellow-50 border-yellow-300'
-                        }`}>
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-semibold text-gray-900">{item.warning}</span>
-                            <span className="text-xs px-2 py-1 rounded bg-white">{item.risk}</span>
-                          </div>
-                          <p className="text-sm text-gray-700">{item.reason}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Analysis */}
-                {aiResult.analysis && (
-                  <div>
-                    <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? '📊 जांच' : '📊 Analysis'}
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {aiResult.analysis.crop_health && (
-                        <div className="bg-green-50 rounded-lg p-3">
-                          <p className="text-xs uppercase text-green-600 tracking-wide mb-1">{language === 'hi' ? 'फसल की सेहत' : 'Crop Health'}</p>
-                          <p className="text-sm font-semibold text-green-800">{aiResult.analysis.crop_health}</p>
-                        </div>
+                    {/* Crop name */}
+                    <div className="pr-10 mb-4">
+                      <p className={`font-heading text-2xl leading-none mb-0.5 ${isTop ? 'text-neo-green-light' : 'text-neo-cream'}`}>
+                        {crop.name}
+                      </p>
+                      {isTop && (
+                        <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-neo-green-dark">
+                          ★ BEST MATCH
+                        </span>
                       )}
-                      {aiResult.analysis.moisture_status && (
-                        <div className="bg-blue-50 rounded-lg p-3">
-                          <p className="text-xs uppercase text-blue-600 tracking-wide mb-1">{language === 'hi' ? 'नमी' : 'Moisture'}</p>
-                          <p className="text-sm font-semibold text-blue-800">{aiResult.analysis.moisture_status}</p>
-                        </div>
-                      )}
-                      {aiResult.analysis.nutrient_status && (
-                        <div className="bg-amber-50 rounded-lg p-3">
-                          <p className="text-xs uppercase text-amber-600 tracking-wide mb-1">{language === 'hi' ? 'खाद' : 'Nutrients'}</p>
-                          <p className="text-sm font-semibold text-amber-800">{aiResult.analysis.nutrient_status}</p>
-                        </div>
-                      )}
-                      {aiResult.analysis.disease_pest_risk && (
-                        <div className="bg-rose-50 rounded-lg p-3">
-                          <p className="text-xs uppercase text-rose-600 tracking-wide mb-1">{language === 'hi' ? 'रोग/कीट' : 'Disease/Pest'}</p>
-                          <p className="text-sm font-semibold text-rose-800">{aiResult.analysis.disease_pest_risk}</p>
-                        </div>
-                      )}
-                      {aiResult.analysis.weather_impact && (
-                        <div className="bg-purple-50 rounded-lg p-3 sm:col-span-2">
-                          <p className="text-xs uppercase text-purple-600 tracking-wide mb-1">{language === 'hi' ? 'मौसम प्रभाव' : 'Weather Impact'}</p>
-                          <p className="text-sm font-semibold text-purple-800">{aiResult.analysis.weather_impact}</p>
-                        </div>
+                      {rank > 3 && (
+                        <span className="font-mono text-[9px] uppercase tracking-widest text-neo-cream/25">
+                          LOWER MATCH
+                        </span>
                       )}
                     </div>
-                  </div>
-                )}
 
-                {/* Midterm Plan */}
-                {aiResult.midterm_plan && (
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                    <h4 className="text-sm sm:text-base font-semibold text-purple-900 mb-2">
-                      {language === 'hi' ? '📅 3-7 दिन की योजना' : '📅 3-7 Day Plan'}
-                    </h4>
-                    <p className="text-sm text-gray-700">{aiResult.midterm_plan}</p>
-                  </div>
-                )}
-
-                {/* Key Metrics */}
-                {aiResult.key_metrics && (
-                  <div>
-                    <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? '📈 प्रमुख मेट्रिक्स' : '📈 Key Metrics'}
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {aiResult.key_metrics.expected_action_days && (
-                        <div className="bg-indigo-50 rounded-lg p-3 text-center">
-                          <p className="text-xs text-indigo-600 mb-1">{language === 'hi' ? 'कार्रवाई के दिन' : 'Action Days'}</p>
-                          <p className="text-2xl font-bold text-indigo-800">{aiResult.key_metrics.expected_action_days}</p>
-                        </div>
-                      )}
-                      {aiResult.key_metrics.yield_impact && (
-                        <div className="bg-green-50 rounded-lg p-3 text-center">
-                          <p className="text-xs text-green-600 mb-1">{language === 'hi' ? 'उपज प्रभाव' : 'Yield Impact'}</p>
-                          <p className="text-lg font-bold text-green-800">{aiResult.key_metrics.yield_impact}</p>
-                        </div>
-                      )}
-                      {aiResult.key_metrics.next_review && (
-                        <div className="bg-blue-50 rounded-lg p-3 text-center">
-                          <p className="text-xs text-blue-600 mb-1">{language === 'hi' ? 'अगली समीक्षा' : 'Next Review'}</p>
-                          <p className="text-lg font-bold text-blue-800">{aiResult.key_metrics.next_review}</p>
-                        </div>
-                      )}
+                    {/* Match percentage + bar */}
+                    <div className="mb-4">
+                      <div className="flex items-baseline gap-1 mb-2">
+                        <span className="font-heading text-5xl text-neo-cream leading-none">{matchPct}</span>
+                        <span className="font-subheading text-lg text-neo-cream/40">%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full overflow-hidden" style={{background:'rgba(244,231,213,0.08)'}}>
+                        <div
+                          className="h-full rounded-full transition-all duration-1000"
+                          style={{
+                            width: `${matchPct}%`,
+                            background: isTop ? '#157A26' : rank <= 3 ? 'rgba(244,231,213,0.35)' : 'rgba(244,231,213,0.15)'
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
 
-                {Array.isArray(aiResult.explanation) && aiResult.explanation.length > 0 && (
-                  <div>
-                    <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
-                      {language === 'hi' ? 'कारण' : 'Explanation'}
-                    </h4>
-                    <ul className="list-disc list-inside space-y-1 text-sm sm:text-base text-gray-700">
-                      {aiResult.explanation.map((reason, idx) => (
-                        <li key={`reason-${idx}`}>{reason}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                    {/* Reason */}
+                    <p className="font-body text-neo-cream/55 text-xs leading-relaxed border-t border-neo-cream/8 pt-3 mb-4 flex-1">
+                      {crop.reason}
+                    </p>
 
-                {aiResult.additional_query && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm sm:text-base text-blue-800">
-                    <p className="font-semibold mb-1">{language === 'hi' ? 'अगला प्रश्न' : 'Follow-up Question'}</p>
-                    <p>{aiResult.additional_query}</p>
-                  </div>
-                )}
+                    {/* Companion chips — visible only when toggle is ON */}
+                    {companionMode && crop.companions?.length > 0 && (
+                      <div className="mb-4 animate-fadeIn">
+                        <p className="font-subheading text-[9px] uppercase tracking-[0.18em] text-neo-green-light/50 mb-2">
+                          COMPANION PLANTS
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {crop.companions.map((c, j) => (
+                            <span
+                              key={j}
+                              className="font-body text-[11px] px-2.5 py-1 rounded-full border border-neo-green-dark/40 text-neo-green-light bg-neo-green-dark/10"
+                            >
+                              🌿 {c}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                <details className="bg-gray-900 text-gray-100 rounded-lg p-3 text-xs sm:text-sm">
-                  <summary className="cursor-pointer font-semibold">
-                    {language === 'hi' ? 'कच्चा JSON देखें' : 'View raw JSON'}
-                  </summary>
-                  <pre className="mt-2 whitespace-pre-wrap break-words">
-{JSON.stringify(aiResult, null, 2)}
-                  </pre>
-                </details>
-              </div>
+                    {/* Plant Now CTA */}
+                    <button
+                      id={`plant-now-crop-${rank}`}
+                      onClick={() => navigate('/multi-crop')}
+                      className={`w-full py-2.5 rounded-xl text-xs font-bold font-subheading uppercase tracking-widest transition-all duration-150 mt-auto ${
+                        isTop
+                          ? 'text-neo-cream border border-neo-green-dark hover:bg-neo-cream hover:text-black'
+                          : 'border border-neo-cream/15 text-neo-cream/40 hover:border-neo-cream/40 hover:text-neo-cream/70'
+                      }`}
+                      style={{
+                        backgroundImage: 'none',
+                        backgroundColor: isTop ? '#157A26' : 'transparent'
+                      }}
+                    >
+                      {language === 'hi' ? 'अभी लगाएं →' : language === 'ta' ? 'இப்போது நடவும் →' : 'PLANT NOW →'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Show More / Less toggle */}
+            {parsedResult.top_crops.length > 3 && (
+              <button
+                id="show-more-crops-btn"
+                onClick={() => setShowMoreCrops(m => !m)}
+                className="w-full py-3 rounded-xl border border-neo-cream/12 text-neo-cream/35 font-subheading text-[11px] uppercase tracking-widest hover:border-neo-cream/25 hover:text-neo-cream/55 transition-all duration-150"
+                style={{background:'transparent', backgroundImage:'none'}}
+              >
+                {showMoreCrops
+                  ? '▲  SHOW LESS'
+                  : `▼  SHOW ${parsedResult.top_crops.length - 3} MORE CROP${parsedResult.top_crops.length - 3 > 1 ? 'S' : ''} — LOWER MATCH`}
+              </button>
             )}
           </div>
         )}
-      </div>
 
-      {/* Error/Success Popup */}
-      {(showErrorPopup && aiError) || errorPopup.show ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fadeIn">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-slideUp">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                {errorPopup.type === 'success' ? (
-                  <svg className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                ) : (
-                  <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {errorPopup.message || aiError}
+        {/* ── SOIL HEALTH SCORE ────────────────────────────────────────── */}
+        {showCropResults && parsedResult?.soil_score != null && (
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6 mb-6 animate-fadeIn">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
+              <div>
+                <h3 className="font-heading text-2xl text-neo-cream uppercase leading-none mb-1">
+                  {language === 'hi' ? 'मृदा स्वास्थ्य स्कोर' : language === 'ta' ? 'மண் ஆரோக்கிய மதிப்பெண்' : 'SOIL HEALTH SCORE'}
                 </h3>
-                {errorPopup.solution && (
-                  <p className="text-gray-600 text-sm mt-1">
-                    💡 {errorPopup.solution}
-                  </p>
-                )}
+                <p className="font-subheading text-[10px] uppercase tracking-widest text-neo-cream/35">
+                  Based on NPK · pH · EC · Moisture
+                </p>
+              </div>
+              {/* Score badge */}
+              <div className="flex items-baseline gap-1 flex-shrink-0">
+                <span className="font-heading leading-none text-neo-cream" style={{fontSize:'clamp(3rem,8vw,4.5rem)'}}>
+                  {parsedResult.soil_score}
+                </span>
+                <span className="font-subheading text-2xl text-neo-cream/35">/100</span>
+              </div>
+            </div>
+            {/* Score bar */}
+            <div className="h-3 rounded-full overflow-hidden mb-5" style={{background:'rgba(244,231,213,0.08)'}}>
+              <div
+                className="h-full rounded-full transition-all duration-1000"
+                style={{
+                  width: `${parsedResult.soil_score}%`,
+                  background: parsedResult.soil_score >= 75
+                    ? 'linear-gradient(to right, #157A26, #22c55e)'
+                    : parsedResult.soil_score >= 50
+                    ? 'linear-gradient(to right, #a16207, #eab308)'
+                    : 'linear-gradient(to right, #991b1b, #ef4444)'
+                }}
+              />
+            </div>
+            {/* Segment labels */}
+            <div className="flex justify-between mb-5">
+              <span className="font-mono text-[9px] text-neo-cream/25 uppercase">0</span>
+              <span className="font-mono text-[9px] text-neo-cream/25 uppercase">Poor</span>
+              <span className="font-mono text-[9px] text-neo-cream/25 uppercase">Fair</span>
+              <span className="font-mono text-[9px] text-neo-cream/25 uppercase">Good</span>
+              <span className="font-mono text-[9px] text-neo-cream/25 uppercase">100</span>
+            </div>
+            {/* AI soil summary */}
+            {parsedResult.soil_summary && (
+              <p className="font-body text-neo-cream/60 text-sm leading-relaxed border-t border-neo-cream/10 pt-4">
+                {parsedResult.soil_summary}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── ERROR/SUCCESS POPUP ─────────────────────────────────────── */}
+        {((showErrorPopup && aiError) || errorPopup.show) && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-fadeIn">
+            <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[8px_8px_0px_#F4E7D5] max-w-md w-full p-6 animate-slideUp">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 mt-1">
+                  {errorPopup.type === 'success' ? (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                  ) : (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className={`font-subheading font-bold text-neo-cream mb-2 ${errorPopup.isLarge ? 'text-xl mt-1' : ''}`}>
+                    {errorPopup.message || aiError}
+                  </h3>
+                  {errorPopup.solution && (
+                    <p className="font-body text-neo-cream/60 text-sm">
+                      {errorPopup.solution}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowErrorPopup(false);
+                    setAiError('');
+                    setErrorPopup({ show: false, message: '', solution: '' });
+                  }}
+                  className="flex-shrink-0 text-neo-cream/40 hover:text-neo-cream transition-colors text-xl"
+                >
+                  ✕
+                </button>
               </div>
               <button
                 onClick={() => {
@@ -1030,70 +1680,44 @@ const AIAnalysis = () => {
                   setAiError('');
                   setErrorPopup({ show: false, message: '', solution: '' });
                 }}
-                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="mt-4">
-              <button
-                onClick={() => {
-                  setShowErrorPopup(false);
-                  setAiError('');
-                  setErrorPopup({ show: false, message: '', solution: '' });
-                }}
-                className={`w-full ${errorPopup.type === 'success' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white font-medium py-2 px-4 rounded-lg transition-colors`}
+                className={`w-full mt-4 font-subheading font-bold uppercase py-2 px-4 rounded-xl border-2 text-sm transition-all ${
+                  errorPopup.type === 'success'
+                    ? 'bg-neo-green-dark text-neo-cream border-neo-cream'
+                    : 'bg-red-900/40 text-red-400 border-red-500'
+                }`}
               >
                 {language === 'hi' ? 'ठीक है' : 'OK'}
               </button>
             </div>
           </div>
-        </div>
-      ) : null}
+        )}
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-6 mt-8">
-        <div className="container mx-auto px-4">
+        {/* ── FOOTER ─────────────────────────────────────────────────── */}
+        <footer className="border-t border-neo-cream/20 py-6 mt-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* Powered by Microsoft Phi-4 */}
             <div className="flex items-center gap-2">
-              <span className="text-gray-600 text-sm font-medium">Powered by</span>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <span className="font-body text-neo-cream/40 text-sm">Powered by</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-neo-cream/30">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect width="11" height="11" fill="#F25022"/>
                   <rect x="13" width="11" height="11" fill="#7FBA00"/>
                   <rect y="13" width="11" height="11" fill="#00A4EF"/>
                   <rect x="13" y="13" width="11" height="11" fill="#FFB900"/>
                 </svg>
-                <span className="font-semibold text-gray-800">Microsoft Phi-4</span>
+                <span className="font-subheading font-semibold text-neo-cream text-sm">Microsoft Phi-4</span>
               </div>
             </div>
-
-            {/* Developed by toofani627 */}
             <div className="flex items-center gap-3">
-              <span className="text-gray-600 text-sm font-medium">Developed by</span>
-              <a 
-                href="https://github.com/toofani627" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
-              >
-                <img 
-                  src="/toofani627-logo.png" 
-                  alt="toofani627" 
-                  className="w-8 h-8 rounded-full object-cover ring-2  "
-                />
-                <span className="font-semibold text-gray-800">toofani627</span>
-                <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                </svg>
-              </a>
+              <span className="font-body text-neo-cream/40 text-sm">{t('developedBy')}</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-neo-cream/30 hover:border-neo-cream transition-all">
+                <img src="/cloud-balloon-logo.png" alt="Team Anna Mani" className="w-6 h-6 rounded-lg object-contain" />
+                <span className="font-subheading font-semibold text-neo-cream text-sm">Team Anna Mani</span>
+              </div>
             </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+
+      </div>
     </div>
   );
 };

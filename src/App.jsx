@@ -1,79 +1,82 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
-import { useDeviceStore } from './store/deviceStore';
+import { getSession } from './lib/auth';
+
+import Login        from './pages/Login';
 import LanguageSelect from './components/LanguageSelect';
-import MainMenu from './components/MainMenu';
-import AIAnalysis from './components/AIAnalysis';
+import AIAnalysis   from './components/AIAnalysis';
+import Profile      from './components/Profile';
+import MultiCrop    from './components/MultiCrop';
+import Layout       from './components/Layout';
+import AnalysisResults from './components/AnalysisResults';
 
-/**
- * DeviceIPHandler Component
- * 
- * Captures device IP from URL query parameter when redirected from ESP8266.
- * Example: https://firstaiproject...net/?deviceIP=192.168.1.100
- */
-const DeviceIPHandler = ({ children }) => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const setDeviceIP = useDeviceStore((state) => state.setDeviceIP);
-
-  useEffect(() => {
-    const deviceIP = searchParams.get('deviceIP');
-    if (deviceIP) {
-      // Validate IP format
-      const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
-      if (ipPattern.test(deviceIP)) {
-        console.log('Device IP captured:', deviceIP);
-        setDeviceIP(deviceIP);
-        
-        // Remove deviceIP from URL to clean it up
-        searchParams.delete('deviceIP');
-        setSearchParams(searchParams, { replace: true });
-      }
-    }
-  }, [searchParams, setDeviceIP, setSearchParams]);
-
+/** Redirects to /login if not authenticated */
+const ProtectedRoute = ({ children }) => {
+  const session = getSession();
+  if (!session) return <Navigate to="/login" replace />;
   return children;
 };
 
 /**
- * AppContent Component
- * 
- * Handles routing logic based on language selection:
- * - If no language is selected, show LanguageSelect screen
- * - Once language is selected, show MainMenu and allow navigation
+ * After login, if no language is chosen yet show LanguageSelect.
+ * Once language is set, proceed to the normal Layout + routes.
  */
 const AppContent = () => {
   const { language } = useLanguage();
+  const session = getSession();
 
-  // If no language selected yet, show language selection screen
-  if (!language) {
-    return <LanguageSelect />;
-  }
-
-  // Once language is selected, redirect directly to AI Analysis
   return (
-    <Router>
-      <DeviceIPHandler>
-        <Routes>
-          <Route path="/" element={<Navigate to="/ai-analysis" replace />} />
-          <Route path="/ai-analysis" element={<AIAnalysis />} />
-          <Route path="*" element={<Navigate to="/ai-analysis" replace />} />
-        </Routes>
-      </DeviceIPHandler>
-    </Router>
+    <Routes>
+      {/* Public: login */}
+      <Route
+        path="/login"
+        element={session ? <Navigate to={language ? '/ai-analysis' : '/language-select'} replace /> : <Login />}
+      />
+
+      {/* After login: language selection (only if language not yet set) */}
+      <Route
+        path="/language-select"
+        element={
+          <ProtectedRoute>
+            {language ? <Navigate to="/ai-analysis" replace /> : <LanguageSelect />}
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protected app routes */}
+      <Route
+        element={
+          <ProtectedRoute>
+            {!language ? <Navigate to="/language-select" replace /> : <Layout />}
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/ai-analysis"       element={<AIAnalysis />} />
+        <Route path="/analysis-results"  element={<AnalysisResults />} />
+        <Route path="/profile"           element={<Profile />} />
+        <Route path="/multi-crop"        element={<MultiCrop />} />
+      </Route>
+
+      {/* Catch-all: if logged in → dashboard, else → login */}
+      <Route
+        path="*"
+        element={
+          session
+            ? <Navigate to={language ? '/ai-analysis' : '/language-select'} replace />
+            : <Navigate to="/login" replace />
+        }
+      />
+    </Routes>
   );
 };
 
-/**
- * Main App Component
- * 
- * Wraps entire application with LanguageProvider context.
- * This ensures all components have access to language state and translations.
- */
 function App() {
   return (
     <LanguageProvider>
-      <AppContent />
+      <Router>
+        <AppContent />
+      </Router>
     </LanguageProvider>
   );
 }

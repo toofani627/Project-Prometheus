@@ -9,38 +9,87 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Syne', sans-serif;
+  background-color: #010101;
+  color: #F4E7D5;
+  background-image:
+    linear-gradient(to right, rgba(244, 231, 213, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(244, 231, 213, 0.06) 1px, transparent 1px);
+  background-size: 30px 30px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Error Popup Animations */
+/* Solid card — blocks grid bleed-through */
+.neo-card {
+  background-color: #111111;
+  background-image: none !important;
+}
+
+/* Dark inputs — force pitch-black on ALL form elements globally */
+input,
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  background-color: #010101 !important;
+  background-image: none !important;
+  color: #F4E7D5 !important;
+  color-scheme: dark;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(244, 231, 213, 0.25) !important;
+}
+
+/* Chrome autofill override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #010101 inset !important;
+  -webkit-text-fill-color: #F4E7D5 !important;
+}
+
+/* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.2s ease-out;
+.animate-fadeIn  { animation: fadeIn  0.2s ease-out; }
+.animate-slideUp { animation: slideUp 0.3s ease-out; }
+
+/* Terminal cursor blink */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.animate-blink { animation: blink 1s step-start infinite; }
+
+/* Retro scanlines overlay on terminal body */
+.terminal-scanlines {
+  position: relative;
+}
+.terminal-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.18) 3px,
+    rgba(0, 0, 0, 0.18) 4px
+  );
 }
 
-.animate-slideUp {
-  animation: slideUp 0.3s ease-out;
-}
