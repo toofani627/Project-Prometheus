@@ -66,6 +66,7 @@ const AIAnalysis = () => {
   const [showCropResults, setShowCropResults] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [errorPopup, setErrorPopup] = useState({ show: false, message: '', solution: '', type: 'error' });
+  const [farmerName, setFarmerName] = useState('');
   
   // Device ID state - captured from URL or manually entered
   const [deviceId, setDeviceId] = useState('');
@@ -646,16 +647,44 @@ const AIAnalysis = () => {
     }
   }, [parsedResult, loadingStep]);
 
-  const getFarmerName = () => {
-    try {
-      const session = getSession();
-      const profileKey = getProfileKey();
-      const p = JSON.parse(localStorage.getItem(profileKey) || '{}');
-      if (p.farmerName) return p.farmerName.toUpperCase();
-      if (session && session.username) return session.username.toUpperCase();
-      return language === 'hi' ? 'किसान' : 'FARMER';
-    } catch { return language === 'hi' ? 'किसान' : 'FARMER'; }
-  };
+  useEffect(() => {
+    const rawName = (() => {
+      try {
+        const session = getSession();
+        const profileKey = getProfileKey();
+        const p = JSON.parse(localStorage.getItem(profileKey) || '{}');
+        if (p.farmerName) return p.farmerName;
+        if (session && session.username) return session.username;
+        return '';
+      } catch { return ''; }
+    })();
+
+    if (!rawName) {
+      setFarmerName(language === 'hi' ? 'किसान' : language === 'ta' ? 'விவசாயி' : 'FARMER');
+      return;
+    }
+
+    if (language === 'en') {
+      setFarmerName(rawName.toUpperCase());
+      return;
+    }
+
+    const itc = language === 'hi' ? 'hi-t-i0-und' : 'ta-t-i0-und';
+    const url = `https://inputtools.google.com/request?text=${encodeURIComponent(rawName)}&itc=${itc}&num=1`;
+    
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (data[0] === 'SUCCESS' && data[1] && data[1][0] && data[1][0][1] && data[1][0][1][0]) {
+          setFarmerName(data[1][0][1][0]);
+        } else {
+          setFarmerName(rawName.toUpperCase());
+        }
+      })
+      .catch(() => {
+        setFarmerName(rawName.toUpperCase());
+      });
+  }, [language]);
 
 
   const latest = devices.length > 0 ? devices[0] : null;
@@ -675,7 +704,7 @@ const AIAnalysis = () => {
         {/* ── HERO SECTION ─────────────────────────────────────────────── */}
         <div className="mb-8 border-b border-neo-cream/20 pb-6">
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl text-neo-cream uppercase leading-none mb-2">
-            {greeting}, {getFarmerName()}
+            {greeting}, {farmerName}
           </h1>
           {selectedCrop && (
             <p className="font-body text-neo-cream/50 text-sm mt-1">
