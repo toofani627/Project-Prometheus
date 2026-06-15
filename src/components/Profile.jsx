@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { getSession, getProfileKey } from '../lib/auth';
 import { transliterate } from '../lib/transliterate';
 
-const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env?.VITE_API_URL || '';
 
 const Profile = () => {
   const { t } = useLanguage();
