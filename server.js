@@ -14,9 +14,20 @@ dotenv.config();
 const MONGODB_URI = process.env.MONGODB_URI || '';
 
 if (MONGODB_URI) {
-  mongoose.connect(MONGODB_URI)
+  mongoose.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
     .then(() => console.log('✅ Connected to MongoDB Atlas'))
     .catch((err) => console.error('❌ MongoDB connection error:', err.message));
+
+  mongoose.connection.on('disconnected', () => {
+    console.warn('⚠️ MongoDB disconnected! Waiting for auto-reconnect...');
+  });
+
+  mongoose.connection.on('reconnected', () => {
+    console.log('✅ MongoDB reconnected successfully!');
+  });
 } else {
   console.warn('⚠️  MONGODB_URI not set — profile persistence disabled');
 }
@@ -574,9 +585,6 @@ app.get("/api/devices", (req, res) => {
  * - Existing username + wrong password → 401 error
  */
 app.post("/api/auth/login", async (req, res) => {
-  if (mongoose.connection.readyState !== 1) {
-    return res.status(503).json({ error: 'Database not connected' });
-  }
   try {
     const { username, password } = req.body || {};
     if (!username || !username.trim()) {
@@ -614,9 +622,6 @@ app.post("/api/auth/login", async (req, res) => {
  * Returns lastDevice, crops, fertilizers for the given user.
  */
 app.get("/api/profile/:username", async (req, res) => {
-  if (mongoose.connection.readyState !== 1) {
-    return res.status(503).json({ error: 'Database not connected' });
-  }
   try {
     const username = req.params.username.toLowerCase().trim();
     const profile = await UserProfile.findOne({ username });
@@ -642,9 +647,6 @@ app.get("/api/profile/:username", async (req, res) => {
  * Body: { username, crops, fertilizers, lastDevice? }
  */
 app.post("/api/profile", async (req, res) => {
-  if (mongoose.connection.readyState !== 1) {
-    return res.status(503).json({ error: 'Database not connected' });
-  }
   try {
     const { username, crops, fertilizers, lastDevice } = req.body || {};
     if (!username) {
