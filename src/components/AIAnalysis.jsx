@@ -525,14 +525,12 @@ const AIAnalysis = () => {
       let parsed = null;
       try {
         let text = result.recommendation || '';
-        // Strip markdown code fences if the model wrapped the JSON
-        if (text.includes('```')) {
-          text = text.replace(/^```(?:json)?\n?/im, '').replace(/\n?```$/im, '');
-        }
-        // Find first { to handle any leading whitespace/text
         const jsonStart = text.indexOf('{');
-        if (jsonStart !== -1) text = text.slice(jsonStart);
-        parsed = JSON.parse(text.trim());
+        const jsonEnd = text.lastIndexOf('}');
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd >= jsonStart) {
+          text = text.substring(jsonStart, jsonEnd + 1);
+        }
+        parsed = JSON.parse(text);
       } catch {
         // Fallback: wrap plain text as a soil summary with no crop cards
         parsed = { soil_score: null, soil_summary: result.recommendation, top_crops: [] };
@@ -562,7 +560,7 @@ const AIAnalysis = () => {
           : language === 'ta'
           ? 'நேரம் முடிந்தது. மீண்டும் முயற்சிக்கவும்.'
           : 'Request timeout. Please try again.';
-      } else if (error.message.includes('500') || error.message.includes('502')) {
+      } else if (error.message.includes('500') || error.message.includes('502') || error.message.includes('504')) {
         simpleError = language === 'hi'
           ? 'सर्वर में दिक्कत है। थोड़ी देर बाद कोशिश करें।'
           : language === 'ta'

@@ -371,8 +371,8 @@ wss.on('connection', (ws, req) => {
       if (data.type === 'auth' || data.type === 'DEVICE_CONNECT') {
         const incomingId = data.deviceId || data.device || 'ESP1';
         
-        if (VALID_DEVICE_IDS.includes(incomingId)) {
-          deviceId = incomingId;
+        if (incomingId && incomingId.trim() !== '') {
+          deviceId = incomingId.trim();
           connectedDevices.set(deviceId, {
             ws: ws,
             data: null,
@@ -383,8 +383,8 @@ wss.on('connection', (ws, req) => {
           // Support both new auth pattern and old connection pattern
           ws.send(JSON.stringify({ type: data.type === 'auth' ? 'auth_success' : 'CONNECTED', deviceId }));
         } else {
-          console.log(`❌ Device connection rejected: Unrecognized ID [${incomingId}]`);
-          ws.send(JSON.stringify({ type: 'auth_failed', error: 'Invalid Device ID' }));
+          console.log(`❌ Device connection rejected: Invalid ID format`);
+          ws.send(JSON.stringify({ type: 'auth_failed', error: 'Invalid Device ID format' }));
           ws.close();
         }
         return;
@@ -406,8 +406,8 @@ wss.on('connection', (ws, req) => {
             mock_sensors: Boolean(enrichedData._mock_sensors_generated)
           });
         } else {
-          if (VALID_DEVICE_IDS.includes(deviceId)) {
-            connectedDevices.set(deviceId, {
+          if (deviceId && deviceId.trim() !== '') {
+            connectedDevices.set(deviceId.trim(), {
               ws: ws,
               data: enrichedData,
               lastUpdate: Date.now(),
@@ -415,7 +415,7 @@ wss.on('connection', (ws, req) => {
             });
             console.log(`✅ Device auto-registered: ${deviceId}`);
           } else {
-            console.log(`❌ Ignored data from unauthorized device: ${deviceId}`);
+            console.log(`❌ Ignored data from missing device ID`);
           }
         }
       }
@@ -455,19 +455,15 @@ app.get("/api/hello", (req, res) => {
 
 /**
  * Device ID Authentication Endpoint for React Frontend
- * Validates the entered device ID against the authorized list.
+ * Validates the entered device ID. We now accept any non-empty string.
  */
 app.post("/api/auth-device", (req, res) => {
   const { deviceId } = req.body;
-  if (!deviceId) {
+  if (!deviceId || deviceId.trim() === '') {
     return res.status(400).json({ error: "Device ID is required" });
   }
   
-  if (VALID_DEVICE_IDS.includes(deviceId)) {
-    return res.json({ type: 'auth_success' });
-  } else {
-    return res.status(403).json({ type: 'auth_failed', error: 'Unrecognized Device ID' });
-  }
+  return res.json({ type: 'auth_success' });
 });
 
 /**
@@ -727,9 +723,9 @@ Your pH is 6.5, which is perfectly balanced for nutrient absorption. No amendmen
   console.log('Calling Azure AI model...');
   console.log(`Request: ${messages.length} messages, user prompt length: ${messages[messages.length-1]?.content?.length || 0}`);
 
-  // Add 60-second timeout to prevent hanging requests
+  // Add 300-second timeout to prevent hanging requests
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  const timeoutId = setTimeout(() => controller.abort(), 300000);
 
   try {
     const response = await fetch(url, {
@@ -740,8 +736,8 @@ Your pH is 6.5, which is perfectly balanced for nutrient absorption. No amendmen
       },
       body: JSON.stringify({
         messages,
-        temperature: 0.4,
-        max_tokens: 350
+        temperature: 0.7,
+        max_tokens: 3000
       }),
       signal: controller.signal
     });
@@ -774,7 +770,7 @@ Your pH is 6.5, which is perfectly balanced for nutrient absorption. No amendmen
   } catch (error) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
-      throw new Error('Azure AI request timed out after 60 seconds');
+      throw new Error('Azure AI request timed out after 300 seconds');
     }
     throw error;
   }
@@ -922,10 +918,11 @@ app.post("/api/ai/analyze", async (req, res) => {
       console.log(`AI Response received (length: ${aiResult.text?.length || 0} chars)`);
       
       let cleanedText = aiResult.text.trim();
-      if (cleanedText.startsWith("```")) {
-        cleanedText = cleanedText.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "");
+      const jsonStart = cleanedText.indexOf('{');
+      const jsonEnd = cleanedText.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd >= jsonStart) {
+        cleanedText = cleanedText.substring(jsonStart, jsonEnd + 1);
       }
-      cleanedText = cleanedText.trim();
 
       let jsonResponse;
       try {
