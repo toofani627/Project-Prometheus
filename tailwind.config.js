@@ -17,9 +17,9 @@ export default {
         'neo-green-light': '#E0F5DC',
       },
       fontFamily: {
-        'heading':    ['"Alfa Slab One"', 'cursive'],
-        'subheading': ['"Syne"',          'sans-serif'],
-        'body':       ['"Outfit"',        'sans-serif'],
+        'heading':    ['var(--font-heading)'],
+        'subheading': ['var(--font-subheading)'],
+        'body':       ['var(--font-body)'],
       },
     },
   },

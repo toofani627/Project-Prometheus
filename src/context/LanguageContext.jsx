@@ -632,6 +632,9 @@ export const LanguageProvider = ({ children }) => {
   useEffect(() => {
     if (language) {
       localStorage.setItem('language', language);
+      document.documentElement.lang = language;
+    } else {
+      document.documentElement.lang = 'en';
     }
   }, [language]);
 

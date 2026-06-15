@@ -167,7 +167,7 @@ const Profile = () => {
           <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.5)', marginBottom: '0.25rem', fontFamily: 'inherit' }}>
             {t('farmerAccount')}
           </p>
-          <h1 style={{ fontSize: '3rem', fontFamily: '"Alfa Slab One", cursive', textTransform: 'uppercase', lineHeight: 1, marginBottom: '0.5rem' }}>
+          <h1 style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', textTransform: 'uppercase', lineHeight: 1, marginBottom: '0.5rem' }}>
             {displayName}
           </h1>
           <p style={{ fontSize: '0.75rem', color: 'rgba(244,231,213,0.4)' }}>
@@ -189,7 +189,7 @@ const Profile = () => {
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                 <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontFamily: '"Alfa Slab One", cursive', fontSize: '0.7rem' }}>01</span>
+                  <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>01</span>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
@@ -215,7 +215,7 @@ const Profile = () => {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontFamily: '"Alfa Slab One", cursive', fontSize: '0.7rem' }}>02</span>
+                    <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>02</span>
                   </div>
                   <div>
                     <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
@@ -294,7 +294,7 @@ const Profile = () => {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontFamily: '"Alfa Slab One", cursive', fontSize: '0.7rem' }}>03</span>
+                    <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>03</span>
                   </div>
                   <div>
                     <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>

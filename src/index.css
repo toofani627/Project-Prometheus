@@ -1,6 +1,20 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&family=Rozha+One&family=Poppins:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --font-heading: 'Alfa Slab One', cursive;
+  --font-subheading: 'Syne', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+}
+
+html[lang="hi"] {
+  --font-heading: 'Rozha One', serif;
+  --font-subheading: 'Poppins', sans-serif;
+}
 
 * {
   margin: 0;
@@ -9,7 +23,7 @@
 }
 
 body {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-body);
   background-color: #010101;
   color: #F4E7D5;
   background-image:
