@@ -1542,7 +1542,7 @@ const AIAnalysis = () => {
                               key={j}
                               className="font-body text-[11px] px-2.5 py-1 rounded-full border border-neo-green-dark/40 text-neo-green-light bg-neo-green-dark/10"
                             >
-                              🌿 {c}
+                              {c}
                             </span>
                           ))}
                         </div>

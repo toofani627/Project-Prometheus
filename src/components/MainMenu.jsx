@@ -42,9 +42,9 @@ const MainMenu = () => {
             className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors duration-200 text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
           >
             <span className="hidden xs:inline">
-              {language === 'en' ? '🌐 हिन्दी / தமிழ்' : language === 'hi' ? '🌐 English / தமிழ்' : '🌐 English / हिन्दी'}
+              {language === 'en' ? 'हिन्दी / தமிழ்' : language === 'hi' ? 'English / தமிழ்' : 'English / हिन्दी'}
             </span>
-            <span className="xs:hidden">🌐</span>
+            <span className="xs:hidden">Lang</span>
           </button>
         </div>
       </div>
@@ -102,10 +102,10 @@ const MainMenu = () => {
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-center text-gray-800 mb-3 sm:mb-4">
               {language === 'en'
-                ? '🌿 Companion Planting'
+                ? 'Companion Planting'
                 : language === 'hi'
-                ? '🌿 साथी फसल'
-                : '🌿 கூட்டுப் பயிர்'}
+                ? 'साथी फसल'
+                : 'கூட்டுப் பயிர்'}
             </h2>
             <p className="text-sm sm:text-base text-gray-600 text-center">
               {language === 'en'

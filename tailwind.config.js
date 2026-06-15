@@ -18,8 +18,8 @@ export default {
       },
       fontFamily: {
         'heading':    ['"Alfa Slab One"', 'cursive'],
-        'subheading': ['"Outfit"', 'sans-serif'],
-        'body':       ['"Syne"', 'sans-serif'],
+        'subheading': ['"Syne"',          'sans-serif'],
+        'body':       ['"Outfit"',        'sans-serif'],
       },
     },
   },

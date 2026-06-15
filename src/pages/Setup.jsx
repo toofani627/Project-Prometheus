@@ -178,7 +178,7 @@ const Setup = () => {
               <div key={crop.id} style={{ backgroundColor: '#1a1a1a', backgroundImage: 'none', border: '1px solid rgba(244,231,213,0.12)', borderRadius: '0.75rem', overflow: 'hidden', animation: 'fadeIn 0.25s ease' }}>
                 <div style={{ padding: '0.875rem 1rem' }}>
                   <p style={{ fontSize: '0.6rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.3)', marginBottom: '0.6rem' }}>
-                    {idx === 0 ? '🌾 Most Recent Crop' : idx === 1 ? '🌾 2nd Most Recent' : `🌾 Crop #${idx + 1}`}
+                    {idx === 0 ? 'Most Recent Crop' : idx === 1 ? '2nd Most Recent' : `Crop #${idx + 1}`}
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                     <div>
@@ -246,7 +246,7 @@ const Setup = () => {
               <div key={fert.id} style={{ backgroundColor: '#1a1a1a', backgroundImage: 'none', border: '1px solid rgba(244,231,213,0.12)', borderRadius: '0.75rem', overflow: 'hidden', animation: 'fadeIn 0.25s ease' }}>
                 <div style={{ padding: '0.875rem 1rem' }}>
                   <p style={{ fontSize: '0.6rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.3)', marginBottom: '0.6rem' }}>
-                    🧪 Entry {fidx + 1}
+                    Entry {fidx + 1}
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem' }}>
                     <div>
