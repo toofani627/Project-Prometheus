@@ -11,6 +11,7 @@ const Profile = () => {
 
   // Profile data
   const [lastDevice, setLastDevice] = useState(null);
+  const [farmerName, setFarmerName] = useState('');
   const [crops, setCrops] = useState([{ id: 1, name: '', dateGrown: '' }]);
   const [fertilizers, setFertilizers] = useState([{ id: 1, name: '', amount: '', unit: 'kgs/bigha' }]);
   const [nextCropId, setNextCropId] = useState(2);
@@ -36,6 +37,7 @@ const Profile = () => {
           if (res.ok) {
             const data = await res.json();
             setLastDevice(data.lastDevice || null);
+            if (data.farmerName) setFarmerName(data.farmerName);
             if (Array.isArray(data.crops) && data.crops.length > 0) {
               setCrops(data.crops);
               setNextCropId(Math.max(...data.crops.map(c => c.id || 0)) + 1);
@@ -59,6 +61,7 @@ const Profile = () => {
         if (raw) {
           const cached = JSON.parse(raw);
           if (cached.lastDevice) setLastDevice(cached.lastDevice);
+          if (cached.farmerName) setFarmerName(cached.farmerName);
           if (Array.isArray(cached.crops) && cached.crops.length > 0) {
             setCrops(cached.crops);
             setNextCropId(Math.max(...cached.crops.map(c => c.id || 0)) + 1);
@@ -82,6 +85,7 @@ const Profile = () => {
     const username = session?.username;
 
     const payload = {
+      farmerName,
       crops: crops.filter(c => c.name.trim() !== ''),
       fertilizers: fertilizers.filter(f => f.name.trim() !== '')
     };
@@ -133,7 +137,7 @@ const Profile = () => {
     setFertilizers(fertilizers.map(f => f.id === id ? { ...f, [field]: value } : f));
 
   const session = getSession();
-  const displayName = session?.displayName || session?.username || 'Farmer';
+  const displayName = farmerName || session?.displayName || session?.username || 'Farmer';
 
   // ─── Shared card style ───────────────────────────────────────────────────────
   const cardStyle = {
@@ -185,11 +189,35 @@ const Profile = () => {
           </div>
         ) : (
           <>
-            {/* ── Section 1: Last Device ────────────────────────────────── */}
+            {/* ── Section 1: Farmer Name ────────────────────────────────── */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                 <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>01</span>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
+                    {t('farmerNameLabel')}
+                  </p>
+                  <p style={{ fontSize: '0.7rem', color: 'rgba(244,231,213,0.4)' }}>
+                    {t('enterNameDesc')}
+                  </p>
+                </div>
+              </div>
+              <input
+                type="text"
+                value={farmerName}
+                onChange={e => setFarmerName(e.target.value)}
+                style={{ ...inputStyle, fontSize: '0.875rem' }}
+                placeholder={t('namePlaceholder')}
+              />
+            </div>
+
+            {/* ── Section 2: Last Device ────────────────────────────────── */}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>02</span>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
@@ -210,12 +238,12 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* ── Section 2: Last Crops ─────────────────────────────────── */}
+            {/* ── Section 3: Last Crops ─────────────────────────────────── */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>02</span>
+                    <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>03</span>
                   </div>
                   <div>
                     <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
@@ -289,12 +317,12 @@ const Profile = () => {
               </button>
             </div>
 
-            {/* ── Section 3: Fertilizers ────────────────────────────────── */}
+            {/* ── Section 4: Fertilizers ────────────────────────────────── */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>03</span>
+                    <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>04</span>
                   </div>
                   <div>
                     <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>

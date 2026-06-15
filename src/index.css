@@ -11,7 +11,8 @@
   --font-body: 'Outfit', sans-serif;
 }
 
-html[lang="hi"] {
+html[lang="hi"],
+.lang-hi {
   --font-heading: 'Rozha One', serif;
   --font-subheading: 'Poppins', sans-serif;
 }

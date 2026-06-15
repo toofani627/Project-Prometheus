@@ -204,6 +204,9 @@ const translations = {
     navCompanion: 'COMPANION PLANTING',
     navProfile: 'PROFILE',
     languageLabel: 'LANGUAGE',
+    farmerNameLabel: 'FARMER NAME',
+    enterNameDesc: 'Enter your name',
+    namePlaceholder: 'e.g. John Doe',
 
   },
   hi: {
@@ -404,6 +407,9 @@ const translations = {
     navCompanion: 'साथी फसल',
     navProfile: 'प्रोफाइल',
     languageLabel: 'भाषा',
+    farmerNameLabel: 'किसान का नाम',
+    enterNameDesc: 'अपना नाम दर्ज करें',
+    namePlaceholder: 'उदा. राम',
 
   },
   ta: {
@@ -605,6 +611,9 @@ const translations = {
     navCompanion: 'கூட்டுப் பயிர்',
     navProfile: 'சுயவிவரம்',
     languageLabel: 'மொழி',
+    farmerNameLabel: 'விவசாயி பெயர்',
+    enterNameDesc: 'உங்கள் பெயரை உள்ளிடவும்',
+    namePlaceholder: 'உதா. ராமன்',
 
   },
 };
@@ -633,8 +642,14 @@ export const LanguageProvider = ({ children }) => {
     if (language) {
       localStorage.setItem('language', language);
       document.documentElement.lang = language;
+      if (language === 'hi') {
+        document.body.classList.add('lang-hi');
+      } else {
+        document.body.classList.remove('lang-hi');
+      }
     } else {
       document.documentElement.lang = 'en';
+      document.body.classList.remove('lang-hi');
     }
   }, [language]);
 
