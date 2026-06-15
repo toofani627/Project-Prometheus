@@ -58,16 +58,18 @@ Your task is to analyze real soil moisture, synthesized soil chemistry (N/P/K, p
 
 🚨 CRITICAL: YOU MUST RESPOND ONLY WITH A VALID JSON OBJECT. Do not wrap it in markdown codeblocks (like \`\`\`json ... \`\`\`). Only return raw JSON.
 
+${isHindi ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO HINDI (हिन्दी). The JSON keys must remain in English.` : isTamil ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO TAMIL (தமிழ்). The JSON keys must remain in English.` : `All text values must be in English.`}
+
 JSON Structure:
 {
   "soil_score": 85,
-  "soil_summary": "Summary of soil health, moisture, and nutrient balance in 2-3 sentences.",
+  "soil_summary": "${isHindi ? 'मृदा स्वास्थ्य, नमी और पोषक तत्वों का 2-3 वाक्यों में सारांश।' : isTamil ? 'மண் ஆரோக்கியம், ஈரப்பதம் மற்றும் ஊட்டச்சத்து சமநிலை பற்றிய 2-3 வாக்கியங்கள்.' : 'Summary of soil health, moisture, and nutrient balance in 2-3 sentences.'}",
   "top_crops": [
     {
-      "name": "Crop Name",
+      "name": "${isHindi ? 'फसल का नाम' : isTamil ? 'பயிரின் பெயர்' : 'Crop Name'}",
       "match_percentage": 94,
-      "reason": "Reason for recommendation tied to soil/weather.",
-      "companions": ["Companion 1", "Companion 2"]
+      "reason": "${isHindi ? 'सिफारिश का कारण।' : isTamil ? 'பரிந்துரைக்கான காரணம்.' : 'Reason for recommendation tied to soil/weather.'}",
+      "companions": ["${isHindi ? 'साथी फसल 1' : isTamil ? 'கூட்டுப் பயிர் 1' : 'Companion 1'}", "${isHindi ? 'साथी फसल 2' : isTamil ? 'கூட்டுப் பயிர் 2' : 'Companion 2'}"]
     }
   ]
 }
@@ -79,14 +81,6 @@ JSON Structure:
 4. Calculate a realistic "soil_score" (0-100) based on optimal conditions
 5. Provide exactly 3-5 optimal crops, ranked by "match_percentage" (highest first)
 6. Recommend 1-2 companion plants for each crop
-
-${isHindi ? `
-🚨 CRITICAL: RESPOND IN HINDI ONLY 🚨
-(हिन्दी में जवाब दें - सभी शब्द हिन्दी में)` : isTamil ? `
-🚨 CRITICAL: RESPOND IN TAMIL ONLY 🚨
-(தமிழில் பதில் அளிக்கவும் - அனைத்து வார்த்தைகளும் தமிழில்)` : `
-🚨 CRITICAL: RESPOND IN ENGLISH ONLY 🚨
-(Respond in English - all words in English)`}
 `;
 };
 
@@ -278,7 +272,7 @@ ${additionalQuery && additionalQuery !== 'None' ? `Farmer Question: ${additional
 TASK: Using soil moisture (real), N/P/K/pH/EC, farm history, and weather — output the TOP 3 optimal crop recommendations as a numbered list.
 
 🚨 RESPOND IN ${isHindi ? 'HINDI (हिन्दी) ONLY' : isTamil ? 'TAMIL (தமிழ்) ONLY' : 'ENGLISH ONLY'} 🚨
-${isHindi ? 'हिन्दी में जवाब दें - सभी शब्द हिन्दी में' : isTamil ? 'தமிழில் பதில் அளிக்கவும் - அனைத்து வார்த்தைகளும் தமிழில்' : 'Respond in English - all words in English'}`;
+${isHindi ? 'हिन्दी में जवाब दें - JSON के सभी मान (values) हिन्दी में होने चाहिए! कुंजियां (keys) अंग्रेजी में ही रखें।' : isTamil ? 'தமிழில் பதில் அளிக்கவும் - JSON இன் அனைத்து மதிப்புகளும் (values) தமிழில் இருக்க வேண்டும்! (keys) ஆங்கிலத்திலேயே இருக்க வேண்டும்.' : 'Respond in English - all values in English'}`;
 
   return [
     {
@@ -302,16 +296,15 @@ You must analyze the crop and its growth stage to provide a scientifically sound
 
 🚨 CRITICAL: YOU MUST RESPOND ONLY WITH A VALID JSON OBJECT containing EXACTLY these four keys. Do not wrap it in markdown codeblocks (like \`\`\`json ... \`\`\`). Only return raw JSON.
 
+${isHindi ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO HINDI (हिन्दी). The JSON keys must remain in English.` : isTamil ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO TAMIL (தமிழ்). The JSON keys must remain in English.` : `All text values must be in English.`}
+
 JSON Structure:
 {
-  "recommendation": "Name of the recommended companion crop",
-  "reason": "Scientific reason for this companion pairing (e.g. pest repellent, nutrient fixing, shade, microclimate, root space)",
-  "benefits": ["Benefit 1", "Benefit 2", "Benefit 3"],
-  "warning": "Any warnings, potential issues, or combinations/crops to avoid planting nearby"
+  "recommendation": "${isHindi ? 'सिफारिश की गई साथी फसल का नाम' : isTamil ? 'பரிந்துரைக்கப்பட்ட கூட்டுப் பயிரின் பெயர்' : 'Name of the recommended companion crop'}",
+  "reason": "${isHindi ? 'इस फसल जोड़ी का वैज्ञानिक कारण' : isTamil ? 'இந்த கூட்டுப் பயிருக்கான அறிவியல் காரணம்' : 'Scientific reason for this companion pairing (e.g. pest repellent, nutrient fixing)'}",
+  "benefits": ["${isHindi ? 'फायदा 1' : isTamil ? 'நன்மை 1' : 'Benefit 1'}", "${isHindi ? 'फायदा 2' : isTamil ? 'நன்மை 2' : 'Benefit 2'}"],
+  "warning": "${isHindi ? 'कोई चेतावनी या ध्यान देने योग्य बातें' : isTamil ? 'எச்சரிக்கைகள் அல்லது கவனிக்க வேண்டியவை' : 'Any warnings, potential issues, or combinations/crops to avoid planting nearby'}"
 }
-
-Ensure the content inside the JSON object is written in the requested language:
-${isHindi ? 'Language: Hindi only (हिन्दी script)' : isTamil ? 'Language: Tamil only (தமிழ் script)' : 'Language: English only'}
 `;
 };
 

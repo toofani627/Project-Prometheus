@@ -13,8 +13,8 @@
 
 html[lang="hi"],
 .lang-hi {
-  --font-heading: 'Rozha One', serif;
-  --font-subheading: 'Poppins', sans-serif;
+  --font-heading: 'Alfa Slab One', 'Rozha One', serif;
+  --font-subheading: 'Syne', 'Poppins', sans-serif;
 }
 
 * {

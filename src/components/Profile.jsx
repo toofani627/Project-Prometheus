@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getSession, getProfileKey } from '../lib/auth';
+import { transliterate } from '../lib/transliterate';
 
 const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3001';
 
@@ -138,6 +139,11 @@ const Profile = () => {
 
   const session = getSession();
   const displayName = farmerName || session?.displayName || session?.username || 'Farmer';
+  const [displayTransliterated, setDisplayTransliterated] = useState(displayName);
+
+  useEffect(() => {
+    transliterate(displayName, language).then(res => setDisplayTransliterated(res));
+  }, [displayName, language]);
 
   // ─── Shared card style ───────────────────────────────────────────────────────
   const cardStyle = {
@@ -172,7 +178,7 @@ const Profile = () => {
             {t('farmerAccount')}
           </p>
           <h1 style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', textTransform: 'uppercase', lineHeight: 1, marginBottom: '0.5rem' }}>
-            {displayName}
+            {displayTransliterated}
           </h1>
           <p style={{ fontSize: '0.75rem', color: 'rgba(244,231,213,0.4)' }}>
             {t('updateCropRecords')}
