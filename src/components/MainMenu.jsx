@@ -101,18 +101,10 @@ const MainMenu = () => {
               </div>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-center text-gray-800 mb-3 sm:mb-4">
-              {language === 'en'
-                ? 'Companion Planting'
-                : language === 'hi'
-                ? 'साथी फसल'
-                : 'கூட்டுப் பயிர்'}
+              {t('companionPlantingTitle')}
             </h2>
             <p className="text-sm sm:text-base text-gray-600 text-center">
-              {language === 'en'
-                ? 'Find the best companion crops for better yields and pest control'
-                : language === 'hi'
-                ? 'बेहतर पैदावार और कीट नियंत्रण के लिए सर्वश्रेष्ठ साथी फसलें खोजें'
-                : 'சிறந்த மகசூல் மற்றும் கீட் கட்டுப்பாட்டிற்கான சிறந்த கூட்டுப் பயிர்களைக் கண்டறியவும்'}
+              {t('companionPlantingDesc')}
             </p>
           </div>
         </div>

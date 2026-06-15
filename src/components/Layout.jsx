@@ -5,7 +5,7 @@ import { logout } from '../lib/auth';
 
 
 const Layout = () => {
-  const { language, changeLanguage } = useLanguage();
+  const { t, language, changeLanguage } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [panelOpen, setPanelOpen] = useState(false);
@@ -17,9 +17,9 @@ const Layout = () => {
 
 
   const navItems = [
-    { path: '/ai-analysis', label: language === 'hi' ? 'डैशबोर्ड'   : language === 'ta' ? 'டாஷ்போர்டு' : 'DASHBOARD' },
-    { path: '/multi-crop',  label: language === 'hi' ? 'साथी फसल'   : language === 'ta' ? 'கூட்டுப் பயிர்' : 'COMPANION PLANTING' },
-    { path: '/profile',     label: language === 'hi' ? 'प्रोफाइल'    : language === 'ta' ? 'விவரம்' : 'PROFILE' },
+    { path: '/ai-analysis', label: t('navDashboard') },
+    { path: '/multi-crop',  label: t('navCompanion') },
+    { path: '/profile',     label: t('navProfile') },
   ];
 
   const langOptions = [
@@ -178,7 +178,7 @@ const Layout = () => {
           {/* Language section */}
           <div className="px-5 pt-5 pb-4">
             <p className="font-subheading text-[10px] uppercase tracking-widest text-neo-cream/40 mb-4 text-center">
-              LANGUAGE
+              {t('languageLabel')}
             </p>
             <div className="flex items-center justify-center gap-3">
               {langOptions.map(({ code, label }) => (
@@ -211,7 +211,7 @@ const Layout = () => {
                 <polyline points="16 17 21 12 16 7"/>
                 <line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
-              LOGOUT
+              {t('logout')}
             </button>
           </div>
         </div>

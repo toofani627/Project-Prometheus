@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSession } from '../lib/auth';
+import { useLanguage } from '../context/LanguageContext';
 
 const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3001';
 
@@ -13,6 +14,7 @@ const Setup = () => {
   const session = getSession();
   const username = session?.username;
   const displayName = session?.displayName || session?.username || 'Farmer';
+  const { t } = useLanguage();
 
   // Step: 'loading' | 'form' | 'saving'
   const [step, setStep] = useState('loading');
@@ -71,7 +73,7 @@ const Setup = () => {
     const cleanFerts = fertilizers.filter(f => f.name.trim());
 
     if (cleanCrops.length === 0) {
-      setError('Please enter at least one crop.');
+      setError(t('pleaseEnterCrop'));
       return;
     }
 
@@ -85,7 +87,7 @@ const Setup = () => {
       if (!res.ok) throw new Error('Save failed');
       navigate('/ai-analysis', { replace: true });
     } catch (err) {
-      setError('Could not save. Please try again.');
+      setError(t('couldNotSave'));
       setStep('form');
     }
   };
@@ -138,17 +140,17 @@ const Setup = () => {
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div style={{ marginBottom: '2.5rem' }}>
           <p style={{ fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.4)', marginBottom: '0.5rem' }}>
-            Welcome, {displayName}
+            {t('welcome')}, {displayName}
           </p>
           <h1 style={{ fontSize: '2.75rem', fontFamily: '"Alfa Slab One", cursive', textTransform: 'uppercase', lineHeight: 1.05, marginBottom: '0.75rem' }}>
-            Tell Us About<br />Your Farm
+            {t('tellUsAboutFarm')}
           </h1>
           <p style={{ fontSize: '0.8rem', color: 'rgba(244,231,213,0.45)', lineHeight: 1.6 }}>
-            This helps our AI give you accurate recommendations from the very first analysis. You can update these anytime from your profile.
+            {t('setupDesc')}
           </p>
           {/* Step indicator */}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
-            {['Last Crops', 'Fertilizers', 'Done'].map((label, i) => (
+            {[t('stepLastCrops'), t('stepFertilizers'), t('stepDone')].map((label, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '50%', backgroundColor: i < 2 ? '#157a26' : 'rgba(244,231,213,0.1)', border: `1px solid ${i < 2 ? '#157a26' : 'rgba(244,231,213,0.2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: '#F4E7D5' }}>
                   {i + 1}
@@ -165,11 +167,11 @@ const Setup = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
             <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.65rem', fontFamily: '"Alfa Slab One", cursive' }}>01</div>
             <div>
-              <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Last Crops Grown</p>
-              <p style={{ fontSize: '0.65rem', color: 'rgba(244,231,213,0.4)', marginTop: '0.1rem' }}>Enter your most recent crops, starting from the latest</p>
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{t('lastCropsGrown')}</p>
+              <p style={{ fontSize: '0.65rem', color: 'rgba(244,231,213,0.4)', marginTop: '0.1rem' }}>{t('enterRecentCrops')}</p>
             </div>
             <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(244,231,213,0.5)', background: 'rgba(244,231,213,0.07)', border: '1px solid rgba(244,231,213,0.15)', borderRadius: '999px', padding: '0.2rem 0.6rem' }}>
-              {crops.length} crop{crops.length !== 1 ? 's' : ''}
+              {crops.length} {crops.length === 1 ? t('cropSingular') : t('cropPlural')}
             </span>
           </div>
 
@@ -178,23 +180,23 @@ const Setup = () => {
               <div key={crop.id} style={{ backgroundColor: '#1a1a1a', backgroundImage: 'none', border: '1px solid rgba(244,231,213,0.12)', borderRadius: '0.75rem', overflow: 'hidden', animation: 'fadeIn 0.25s ease' }}>
                 <div style={{ padding: '0.875rem 1rem' }}>
                   <p style={{ fontSize: '0.6rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.3)', marginBottom: '0.6rem' }}>
-                    {idx === 0 ? 'Most Recent Crop' : idx === 1 ? '2nd Most Recent' : `Crop #${idx + 1}`}
+                    {idx === 0 ? t('mostRecentCrop') : idx === 1 ? t('secondMostRecent') : `${t('cropNum')}${idx + 1}`}
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                     <div>
-                      <label style={labelStyle}>Crop Name</label>
+                      <label style={labelStyle}>{t('cropName')}</label>
                       <input
                         type="text"
                         value={crop.name}
                         onChange={e => updateCrop(crop.id, 'name', e.target.value)}
-                        placeholder="e.g. Wheat, Rice, Cotton"
+                        placeholder={t('cropNamePlaceholderNew')}
                         style={inputStyle}
                         onFocus={e => e.target.style.borderColor = 'rgba(244,231,213,0.7)'}
                         onBlur={e => e.target.style.borderColor = 'rgba(244,231,213,0.35)'}
                       />
                     </div>
                     <div>
-                      <label style={labelStyle}>Date Harvested</label>
+                      <label style={labelStyle}>{t('dateHarvested')}</label>
                       <input
                         type="date"
                         value={crop.dateGrown}
@@ -211,7 +213,7 @@ const Setup = () => {
                     <button onClick={() => removeCrop(crop.id)} style={{ fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(239,68,68,0.5)', background: 'none', border: 'none', cursor: 'pointer' }}
                       onMouseEnter={e => e.target.style.color = '#f87171'}
                       onMouseLeave={e => e.target.style.color = 'rgba(239,68,68,0.5)'}>
-                      Remove
+                      {t('remove')}
                     </button>
                   </div>
                 )}
@@ -224,7 +226,7 @@ const Setup = () => {
             onMouseEnter={e => { e.target.style.borderColor = 'rgba(244,231,213,0.45)'; e.target.style.color = 'rgba(244,231,213,0.7)'; }}
             onMouseLeave={e => { e.target.style.borderColor = 'rgba(244,231,213,0.2)'; e.target.style.color = 'rgba(244,231,213,0.4)'; }}
           >
-            + Add Another Crop
+            {t('addAnotherCrop')}
           </button>
         </div>
 
@@ -233,11 +235,11 @@ const Setup = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
             <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.65rem', fontFamily: '"Alfa Slab One", cursive' }}>02</div>
             <div>
-              <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Fertilizers Used</p>
-              <p style={{ fontSize: '0.65rem', color: 'rgba(244,231,213,0.4)', marginTop: '0.1rem' }}>Inputs from the last 12 months</p>
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{t('fertilizersUsedTitle')}</p>
+              <p style={{ fontSize: '0.65rem', color: 'rgba(244,231,213,0.4)', marginTop: '0.1rem' }}>{t('inputsLast12Months')}</p>
             </div>
             <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(244,231,213,0.5)', background: 'rgba(244,231,213,0.07)', border: '1px solid rgba(244,231,213,0.15)', borderRadius: '999px', padding: '0.2rem 0.6rem' }}>
-              {fertilizers.length} record{fertilizers.length !== 1 ? 's' : ''}
+              {fertilizers.length} {fertilizers.length === 1 ? t('recordSingular') : t('recordPlural')}
             </span>
           </div>
 
@@ -246,27 +248,27 @@ const Setup = () => {
               <div key={fert.id} style={{ backgroundColor: '#1a1a1a', backgroundImage: 'none', border: '1px solid rgba(244,231,213,0.12)', borderRadius: '0.75rem', overflow: 'hidden', animation: 'fadeIn 0.25s ease' }}>
                 <div style={{ padding: '0.875rem 1rem' }}>
                   <p style={{ fontSize: '0.6rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.3)', marginBottom: '0.6rem' }}>
-                    Entry {fidx + 1}
+                    {t('entry')} {fidx + 1}
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem' }}>
                     <div>
-                      <label style={labelStyle}>Fertilizer / Input</label>
-                      <input type="text" value={fert.name} onChange={e => updateFert(fert.id, 'name', e.target.value)} placeholder="e.g. Urea, DAP, Compost" style={inputStyle}
+                      <label style={labelStyle}>{t('fertilizerInput')}</label>
+                      <input type="text" value={fert.name} onChange={e => updateFert(fert.id, 'name', e.target.value)} placeholder={t('fertPlaceholder')} style={inputStyle}
                         onFocus={e => e.target.style.borderColor = 'rgba(244,231,213,0.7)'}
                         onBlur={e => e.target.style.borderColor = 'rgba(244,231,213,0.35)'} />
                     </div>
                     <div>
-                      <label style={labelStyle}>Amount (KG)</label>
-                      <input type="number" step="0.1" min="0" value={fert.amount} onChange={e => updateFert(fert.id, 'amount', e.target.value)} placeholder="e.g. 34" style={inputStyle}
+                      <label style={labelStyle}>{t('amountKg')}</label>
+                      <input type="number" step="0.1" min="0" value={fert.amount} onChange={e => updateFert(fert.id, 'amount', e.target.value)} placeholder={t('amountPlaceholder')} style={inputStyle}
                         onFocus={e => e.target.style.borderColor = 'rgba(244,231,213,0.7)'}
                         onBlur={e => e.target.style.borderColor = 'rgba(244,231,213,0.35)'} />
                     </div>
                     <div>
-                      <label style={labelStyle}>Per Area</label>
+                      <label style={labelStyle}>{t('perArea')}</label>
                       <select value={fert.unit} onChange={e => updateFert(fert.id, 'unit', e.target.value)} style={{ ...inputStyle, colorScheme: 'dark', cursor: 'pointer' }}>
-                        <option value="kgs/bigha">/ Bigha</option>
-                        <option value="kgs/hectare">/ Hectare</option>
-                        <option value="kgs/acre">/ Acre</option>
+                        <option value="kgs/bigha">{t('perBigha')}</option>
+                        <option value="kgs/hectare">{t('perHectare')}</option>
+                        <option value="kgs/acre">{t('perAcre')}</option>
                       </select>
                     </div>
                   </div>
@@ -276,7 +278,7 @@ const Setup = () => {
                     <button onClick={() => removeFert(fert.id)} style={{ fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(239,68,68,0.5)', background: 'none', border: 'none', cursor: 'pointer' }}
                       onMouseEnter={e => e.target.style.color = '#f87171'}
                       onMouseLeave={e => e.target.style.color = 'rgba(239,68,68,0.5)'}>
-                      Remove
+                      {t('remove')}
                     </button>
                   </div>
                 )}
@@ -289,7 +291,7 @@ const Setup = () => {
             onMouseEnter={e => { e.target.style.borderColor = 'rgba(244,231,213,0.45)'; e.target.style.color = 'rgba(244,231,213,0.7)'; }}
             onMouseLeave={e => { e.target.style.borderColor = 'rgba(244,231,213,0.2)'; e.target.style.color = 'rgba(244,231,213,0.4)'; }}
           >
-            + Add Fertilizer
+            {t('addFertilizerBtn')}
           </button>
         </div>
 
@@ -316,7 +318,7 @@ const Setup = () => {
             marginBottom: '0.75rem'
           }}
         >
-          {step === 'saving' ? 'Saving...' : 'Save & Start Analysis →'}
+          {step === 'saving' ? t('saving') : t('saveStartAnalysis')}
         </button>
 
         <button
@@ -325,7 +327,7 @@ const Setup = () => {
           onMouseEnter={e => e.target.style.color = 'rgba(244,231,213,0.6)'}
           onMouseLeave={e => e.target.style.color = 'rgba(244,231,213,0.3)'}
         >
-          Skip for now →
+          {t('skipForNow')}
         </button>
       </div>
 

@@ -1158,14 +1158,14 @@ const AIAnalysis = () => {
                     onClick={() => setShowAllRows(!showAllRows)}
                     className="text-xs font-body text-neo-cream/50 hover:text-neo-cream"
                   >
-                    {showAllRows ? 'Show Less' : `All (${devices.length})`}
+                    {showAllRows ? t('showLess') : `${t('allDevices')} (${devices.length})`}
                   </button>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs font-body">
                     <thead>
                       <tr style={{backgroundColor:'#0d0d0d'}} className="text-neo-cream/60 uppercase tracking-wide">
-                        {['Device','Temp','Humid','Soil','N','P','K','pH','EC','Time'].map(h => (
+                        {[t('tableDevice'), t('tableTemp'), t('tableHumid'), t('tableSoil'), t('tableN'), t('tableP'), t('tableK'), t('tablePh'), t('tableEc'), t('tableTime')].map(h => (
                           <th key={h} className="px-4 py-3 text-left font-subheading whitespace-nowrap border-b border-neo-cream/10">{h}</th>
                         ))}
                       </tr>

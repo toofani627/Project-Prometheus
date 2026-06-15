@@ -6,7 +6,7 @@ import { getSession, getProfileKey } from '../lib/auth';
 const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3001';
 
 const Profile = () => {
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   // Profile data
@@ -108,11 +108,8 @@ const Profile = () => {
       setIsSaving(false);
     }
 
-    setSaveMessage(
-      language === 'hi' ? 'प्रोफाइल सेव हो गया!' :
-      language === 'ta' ? 'விவரம் சேமிக்கப்பட்டது!' :
-      'Profile saved!'
-    );
+    // Reuse existing translation or fallback to English if not present
+    setSaveMessage(t('saveChanges')); 
     setShowSaveMessage(true);
     setTimeout(() => setShowSaveMessage(false), 3000);
   };
@@ -168,15 +165,13 @@ const Profile = () => {
         {/* Header */}
         <div style={{ borderBottom: '1px solid rgba(244,231,213,0.2)', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
           <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.5)', marginBottom: '0.25rem', fontFamily: 'inherit' }}>
-            {language === 'hi' ? 'किसान खाता' : 'FARMER ACCOUNT'}
+            {t('farmerAccount')}
           </p>
           <h1 style={{ fontSize: '3rem', fontFamily: '"Alfa Slab One", cursive', textTransform: 'uppercase', lineHeight: 1, marginBottom: '0.5rem' }}>
             {displayName}
           </h1>
           <p style={{ fontSize: '0.75rem', color: 'rgba(244,231,213,0.4)' }}>
-            {language === 'hi' ? 'अपनी फसल और खाद की जानकारी अपडेट करें।' :
-             language === 'ta' ? 'உங்கள் பயிர் மற்றும் உர விவரங்களை புதுப்பிக்கவும்.' :
-             'Update your crop and fertilizer records below.'}
+            {t('updateCropRecords')}
           </p>
         </div>
 
@@ -184,7 +179,7 @@ const Profile = () => {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 0', gap: '0.75rem' }}>
             <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(244,231,213,0.2)', borderTopColor: '#F4E7D5', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.4)' }}>
-              {language === 'hi' ? 'लोड हो रहा है...' : 'Loading...'}
+              {t('loading')}
             </p>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
@@ -198,10 +193,10 @@ const Profile = () => {
                 </div>
                 <div>
                   <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
-                    {language === 'hi' ? 'अंतिम कनेक्टेड डिवाइस' : language === 'ta' ? 'கடைசி சாதனம்' : 'Last Device Connected'}
+                    {t('lastDeviceConnected')}
                   </p>
                   <p style={{ fontSize: '0.7rem', color: 'rgba(244,231,213,0.4)' }}>
-                    {language === 'hi' ? 'स्वचालित रूप से सेट होता है' : 'Set automatically when you run an analysis'}
+                    {t('setAutomatically')}
                   </p>
                 </div>
               </div>
@@ -210,7 +205,7 @@ const Profile = () => {
                   <rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 3H8M12 3v4"/>
                 </svg>
                 <span style={{ fontSize: '0.875rem', color: lastDevice ? '#F4E7D5' : 'rgba(244,231,213,0.3)', fontFamily: 'monospace' }}>
-                  {lastDevice || (language === 'hi' ? 'कोई डिवाइस नहीं' : 'No device recorded yet')}
+                  {lastDevice || t('noDeviceRecorded')}
                 </span>
               </div>
             </div>
@@ -224,15 +219,15 @@ const Profile = () => {
                   </div>
                   <div>
                     <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
-                      {language === 'hi' ? 'पिछली फसलें' : language === 'ta' ? 'கடைசி பயிர்கள்' : 'Last Crops Grown'}
+                      {t('lastCropsTitle')}
                     </p>
                     <p style={{ fontSize: '0.7rem', color: 'rgba(244,231,213,0.4)' }}>
-                      {language === 'hi' ? 'हाल में उगाई गई फसलें' : 'Most recent first'}
+                      {t('mostRecentFirst')}
                     </p>
                   </div>
                 </div>
                 <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(244,231,213,0.5)', background: 'rgba(244,231,213,0.07)', border: '1px solid rgba(244,231,213,0.2)', borderRadius: '999px', padding: '0.2rem 0.6rem', flexShrink: 0 }}>
-                  {crops.length} crop{crops.length !== 1 ? 's' : ''}
+                  {crops.length} {crops.length === 1 ? t('cropSingular') : t('cropPlural')}
                 </span>
               </div>
 
@@ -241,25 +236,25 @@ const Profile = () => {
                   <div key={crop.id} style={{ backgroundColor: '#1a1a1a', backgroundImage: 'none', border: '1px solid rgba(244,231,213,0.15)', borderRadius: '0.75rem', overflow: 'hidden' }}>
                     <div style={{ padding: '0.75rem 1rem' }}>
                       <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.35)', marginBottom: '0.5rem' }}>
-                        {idx === 0 ? (language === 'hi' ? 'पिछली फसल' : 'LAST CROP') :
-                         idx === 1 ? (language === 'hi' ? 'दूसरी फसल' : '2ND LAST') : `#${idx + 1}`}
+                        {idx === 0 ? t('lastCropLabel') :
+                         idx === 1 ? t('secondLastLabel') : `#${idx + 1}`}
                       </p>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.45)', marginBottom: '0.35rem' }}>
-                            {language === 'hi' ? 'फसल का नाम' : 'CROP NAME'}
+                            {t('cropNameLabel')}
                           </label>
                           <input
                             type="text"
                             value={crop.name}
                             onChange={e => updateCrop(crop.id, 'name', e.target.value)}
-                            placeholder={language === 'hi' ? 'जैसे गेहूं' : 'e.g. Wheat'}
+                            placeholder={t('cropNamePlaceholderNew')}
                             style={inputStyle}
                           />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.45)', marginBottom: '0.35rem' }}>
-                            {language === 'hi' ? 'तारीख' : 'DATE'}
+                            {t('dateHarvestedLabel')}
                           </label>
                           <input
                             type="date"
@@ -277,7 +272,7 @@ const Profile = () => {
                         onMouseEnter={e => e.target.style.color = 'rgb(239,68,68)'}
                         onMouseLeave={e => e.target.style.color = 'rgba(239,68,68,0.6)'}
                       >
-                        Remove
+                        {t('remove')}
                       </button>
                     </div>
                   </div>
@@ -290,7 +285,7 @@ const Profile = () => {
                 onMouseEnter={e => { e.target.style.borderColor = 'rgba(244,231,213,0.5)'; e.target.style.color = '#F4E7D5'; }}
                 onMouseLeave={e => { e.target.style.borderColor = 'rgba(244,231,213,0.25)'; e.target.style.color = 'rgba(244,231,213,0.5)'; }}
               >
-                + {language === 'hi' ? 'नई फसल जोड़ें' : language === 'ta' ? 'புதிய பயிர் சேர்' : 'Add Crop'}
+                {t('addNewCropBtn')}
               </button>
             </div>
 
@@ -303,15 +298,15 @@ const Profile = () => {
                   </div>
                   <div>
                     <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
-                      {language === 'hi' ? 'उपयोग की गई खाद' : language === 'ta' ? 'பயன்படுத்திய உரங்கள்' : 'Fertilizers Used'}
+                      {t('fertilizersUsedTitle')}
                     </p>
                     <p style={{ fontSize: '0.7rem', color: 'rgba(244,231,213,0.4)' }}>
-                      {language === 'hi' ? 'पिछले 12 महीनों में' : 'Last 12 months'}
+                      {t('inputsLast12Months')}
                     </p>
                   </div>
                 </div>
                 <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(244,231,213,0.5)', background: 'rgba(244,231,213,0.07)', border: '1px solid rgba(244,231,213,0.2)', borderRadius: '999px', padding: '0.2rem 0.6rem', flexShrink: 0 }}>
-                  {fertilizers.length} record{fertilizers.length !== 1 ? 's' : ''}
+                  {fertilizers.length} {fertilizers.length === 1 ? t('recordSingular') : t('recordPlural')}
                 </span>
               </div>
 
@@ -320,29 +315,29 @@ const Profile = () => {
                   <div key={fert.id} style={{ backgroundColor: '#1a1a1a', backgroundImage: 'none', border: '1px solid rgba(244,231,213,0.15)', borderRadius: '0.75rem', overflow: 'hidden' }}>
                     <div style={{ padding: '0.75rem 1rem' }}>
                       <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.35)', marginBottom: '0.5rem' }}>
-                        {language === 'hi' ? `प्रविष्टि ${fidx + 1}` : `Entry ${fidx + 1}`}
+                        {t('entry')} {fidx + 1}
                       </p>
                       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem' }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.45)', marginBottom: '0.35rem' }}>
-                            {language === 'hi' ? 'खाद का नाम' : 'FERTILIZER'}
+                            {t('fertilizerNameLabel')}
                           </label>
-                          <input type="text" value={fert.name} onChange={e => updateFertilizer(fert.id, 'name', e.target.value)} placeholder="e.g. Urea, DAP" style={inputStyle} />
+                          <input type="text" value={fert.name} onChange={e => updateFertilizer(fert.id, 'name', e.target.value)} placeholder={t('fertPlaceholder')} style={inputStyle} />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.45)', marginBottom: '0.35rem' }}>
-                            {language === 'hi' ? 'मात्रा' : 'AMOUNT'}
+                            {t('amountLabel')}
                           </label>
-                          <input type="number" step="0.1" min="0" value={fert.amount} onChange={e => updateFertilizer(fert.id, 'amount', e.target.value)} placeholder="e.g. 34" style={inputStyle} />
+                          <input type="number" step="0.1" min="0" value={fert.amount} onChange={e => updateFertilizer(fert.id, 'amount', e.target.value)} placeholder={t('amountPlaceholder')} style={inputStyle} />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.45)', marginBottom: '0.35rem' }}>
-                            {language === 'hi' ? 'प्रति क्षेत्र' : 'PER AREA'}
+                            {t('perArea')}
                           </label>
                           <select value={fert.unit} onChange={e => updateFertilizer(fert.id, 'unit', e.target.value)} style={{ ...inputStyle, colorScheme: 'dark' }}>
-                            <option value="kgs/bigha">Bigha</option>
-                            <option value="kgs/hectare">Hectare</option>
-                            <option value="kgs/acre">Acre</option>
+                            <option value="kgs/bigha">{t('perBigha')}</option>
+                            <option value="kgs/hectare">{t('perHectare')}</option>
+                            <option value="kgs/acre">{t('perAcre')}</option>
                           </select>
                         </div>
                       </div>
@@ -354,7 +349,7 @@ const Profile = () => {
                         onMouseEnter={e => e.target.style.color = 'rgb(239,68,68)'}
                         onMouseLeave={e => e.target.style.color = 'rgba(239,68,68,0.6)'}
                       >
-                        Remove
+                        {t('remove')}
                       </button>
                     </div>
                   </div>
@@ -367,7 +362,7 @@ const Profile = () => {
                 onMouseEnter={e => { e.target.style.borderColor = 'rgba(244,231,213,0.5)'; e.target.style.color = '#F4E7D5'; }}
                 onMouseLeave={e => { e.target.style.borderColor = 'rgba(244,231,213,0.25)'; e.target.style.color = 'rgba(244,231,213,0.5)'; }}
               >
-                + {language === 'hi' ? 'खाद जोड़ें' : language === 'ta' ? 'உரம் சேர்' : 'Add Fertilizer'}
+                {t('addNewFertilizerBtn')}
               </button>
             </div>
 
@@ -394,9 +389,7 @@ const Profile = () => {
                 transition: 'all 0.2s'
               }}
             >
-              {isSaving
-                ? (language === 'hi' ? 'सेव हो रहा है...' : 'Saving...')
-                : (language === 'hi' ? 'प्रोफाइल सेव करें' : language === 'ta' ? 'விவரம் சேமி' : 'SAVE PROFILE')}
+              {isSaving ? t('saving') : t('saveChanges')}
             </button>
 
             {showSaveMessage && (
@@ -415,15 +408,12 @@ const Profile = () => {
                 backgroundImage: 'none',
                 animation: 'fadeIn 0.3s ease'
               }}>
-                {saveError
-                  ? (language === 'hi' ? 'सर्वर से कनेक्ट नहीं — स्थानीय रूप से सेव हुआ' : 'Server unavailable — saved locally')
-                  : saveMessage}
+                {saveError ? t('couldNotSave') : saveMessage}
               </div>
             )}
 
             <p style={{ textAlign: 'center', fontSize: '0.65rem', color: 'rgba(244,231,213,0.2)', marginTop: '1.5rem', letterSpacing: '0.05em' }}>
-              {language === 'hi' ? 'डेटा क्लाउड में सिंक होता है और स्थानीय रूप से बैकअप रहता है।' :
-               'Data is synced to the cloud and cached locally as backup.'}
+              {t('dataSyncCloud')}
             </p>
 
             <style>{`@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }`}</style>
