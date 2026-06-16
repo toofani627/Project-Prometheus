@@ -120,14 +120,18 @@ const enrichTelemetryWithMockSensors = (payload = {}) => {
   }
 
   const moistureFactor = Math.min(1, Math.max(0, soilMoisture / 100));
-  const nitrogen = roundTo(22 + moistureFactor * 38 + Math.random() * 18, 1);
-  const phosphorus = roundTo(10 + moistureFactor * 22 + Math.random() * 10, 1);
-  const potassium = roundTo(85 + moistureFactor * 95 + Math.random() * 45, 1);
-  const ph_level = roundTo(
+  
+  // Use real sensor values from the payload if they exist, otherwise generate mock values
+  const nitrogen = toNumberOrNull(payload.nitrogen ?? payload.n) ?? roundTo(22 + moistureFactor * 38 + Math.random() * 18, 1);
+  const phosphorus = toNumberOrNull(payload.phosphorus ?? payload.p) ?? roundTo(10 + moistureFactor * 22 + Math.random() * 10, 1);
+  const potassium = toNumberOrNull(payload.potassium ?? payload.k) ?? roundTo(85 + moistureFactor * 95 + Math.random() * 45, 1);
+  const ph_level = toNumberOrNull(payload.ph ?? payload.pH ?? payload.ph_level) ?? roundTo(
     Math.min(8.5, Math.max(5.2, 6.2 + (moistureFactor - 0.5) * 1.4 + (Math.random() - 0.5) * 0.6)),
     1
   );
-  const electrical_conductivity = roundTo(0.35 + moistureFactor * 1.4 + Math.random() * 0.55, 2);
+  const electrical_conductivity = toNumberOrNull(payload.ec ?? payload.electrical_conductivity) ?? roundTo(0.35 + moistureFactor * 1.4 + Math.random() * 0.55, 2);
+
+  const hasMockData = (payload.nitrogen === undefined);
 
   return {
     ...payload,
@@ -144,7 +148,7 @@ const enrichTelemetryWithMockSensors = (payload = {}) => {
     ph: ph_level,
     electrical_conductivity,
     ec: electrical_conductivity,
-    _mock_sensors_generated: true
+    _mock_sensors_generated: hasMockData
   };
 };
 
