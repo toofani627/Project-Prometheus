@@ -619,22 +619,21 @@ const translations = {
 };
 
 export const LanguageProvider = ({ children }) => {
-  // Check localStorage for saved language preference, default to null to show language selection
+  // Check localStorage for saved language preference, default to 'en'
   const [language, setLanguage] = useState(() => {
-    // Version check - force language selection for new deployment
-    const APP_VERSION = '2.0'; // Increment this to force language reselection
+    const APP_VERSION = '2.0'; 
     const savedVersion = localStorage.getItem('appVersion');
     
-    // If version doesn't match, clear language and force reselection
+    // If version doesn't match, default to English
     if (savedVersion !== APP_VERSION) {
-      localStorage.removeItem('language');
+      localStorage.setItem('language', 'en');
       localStorage.setItem('appVersion', APP_VERSION);
-      return null;
+      return 'en';
     }
     
     const savedLanguage = localStorage.getItem('language');
-    // Only return saved language if it's valid ('en', 'hi', or 'ta'), otherwise return null
-    return (savedLanguage === 'en' || savedLanguage === 'hi' || savedLanguage === 'ta') ? savedLanguage : null;
+    // Only return saved language if it's valid, otherwise return 'en'
+    return (savedLanguage === 'en' || savedLanguage === 'hi' || savedLanguage === 'ta') ? savedLanguage : 'en';
   });
 
   // Save language preference to localStorage whenever it changes

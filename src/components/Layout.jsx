@@ -83,7 +83,7 @@ const Layout = () => {
           >
             {/* Current language badge */}
             <span className="bg-neo-cream text-neo-dark rounded-lg px-2 py-0.5 text-[11px] font-bold">
-              {language.toUpperCase()}
+              {(language || 'EN').toUpperCase()}
             </span>
             {/* Hamburger / X */}
             <svg viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -228,7 +228,7 @@ const Layout = () => {
           {/* Small lang indicator */}
           <div className="flex flex-col items-center gap-1">
             <span className="font-subheading font-bold text-[9px] text-neo-cream leading-none">
-              {language.toUpperCase()}
+              {(language || 'EN').toUpperCase()}
             </span>
             <div className="w-3 h-0.5 bg-neo-cream/40 rounded"/>
             <svg viewBox="0 0 12 12" className="w-3 h-3 text-neo-cream/60" fill="none" stroke="currentColor" strokeWidth="2">
