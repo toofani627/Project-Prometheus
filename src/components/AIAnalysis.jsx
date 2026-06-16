@@ -1015,7 +1015,18 @@ const AIAnalysis = () => {
                       <p className="font-heading text-6xl text-neo-cream leading-none">
                         {temp !== null ? `${temp}` : '--'}<span className="text-2xl text-neo-cream/50">°C</span>
                       </p>
-                      <p className="font-body text-neo-cream/70 text-base mt-1">{conditionLabel}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="font-body text-neo-cream/70 text-base">{conditionLabel}</p>
+                        {humid !== null && (
+                          <>
+                            <span className="text-neo-cream/30 text-sm">•</span>
+                            <div className="flex items-center gap-1 text-neo-cream/70 text-sm">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                              {humid}%
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
