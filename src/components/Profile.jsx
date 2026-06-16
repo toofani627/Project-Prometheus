@@ -7,7 +7,7 @@ import { transliterate } from '../lib/transliterate';
 const API_URL = "";
 
 const Profile = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   // Profile data
