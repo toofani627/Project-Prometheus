@@ -75,6 +75,32 @@ const AIAnalysis = () => {
   
   // Table display state - show only 4 rows by default
   const [showAllRows, setShowAllRows] = useState(false);
+
+  // Browser Geolocation Weather State
+  const [browserWeather, setBrowserWeather] = useState(null);
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        try {
+          const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m`);
+          const data = await res.json();
+          setBrowserWeather({
+            lat,
+            lon,
+            temperature: data.current.temperature_2m,
+            humidity: data.current.relative_humidity_2m
+          });
+        } catch (e) {
+          console.error("Browser weather fetch failed", e);
+        }
+      }, (error) => {
+        console.warn("Geolocation denied or unavailable:", error.message);
+      });
+    }
+  }, []);
   
   // Capture device_id from URL on mount (for local network redirect)
   useEffect(() => {
@@ -945,9 +971,9 @@ const AIAnalysis = () => {
                 );
               };
 
-              // Derive weather condition from temperature + humidity (simulated if no real weather API)
-              const temp = latest?.temperature && latest.temperature !== '-' ? parseFloat(latest.temperature) : null;
-              const humid = latest?.humidity && latest.humidity !== '-' ? parseFloat(latest.humidity) : null;
+              // Derive weather condition from browser location OR simulated if missing
+              const temp = browserWeather ? browserWeather.temperature : (latest?.temperature && latest.temperature !== '-' ? parseFloat(latest.temperature) : null);
+              const humid = browserWeather ? browserWeather.humidity : (latest?.humidity && latest.humidity !== '-' ? parseFloat(latest.humidity) : null);
               // Simulate weather code from sensor context
               let simCode = null;
               let conditionLabel = '--';
@@ -965,16 +991,18 @@ const AIAnalysis = () => {
                     <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60">
                       {t('weather')}
                     </p>
-                    {latest?.raw && (
+                    {(latest?.raw || browserWeather) && (
                       <div className="flex items-center gap-1.5 text-neo-cream/50">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
                           <circle cx="12" cy="10" r="3"/>
                         </svg>
                         <span className="font-subheading text-[10px] tracking-wider uppercase">
-                          {latest?.raw?.latitude && latest?.raw?.longitude 
-                            ? `${Number(latest.raw.latitude).toFixed(2)}, ${Number(latest.raw.longitude).toFixed(2)}` 
-                            : 'Field Station 1'}
+                          {browserWeather 
+                            ? `${Number(browserWeather.lat).toFixed(2)}, ${Number(browserWeather.lon).toFixed(2)}`
+                            : (latest?.raw?.latitude && latest?.raw?.longitude 
+                              ? `${Number(latest.raw.latitude).toFixed(2)}, ${Number(latest.raw.longitude).toFixed(2)}` 
+                              : 'Field Station 1')}
                         </span>
                       </div>
                     )}
