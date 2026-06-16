@@ -172,7 +172,7 @@ const AIAnalysis = () => {
         potassium: data.potassium ?? data.k ?? '-',
         phLevel: data.ph_level ?? data.pH ?? data.ph ?? '-',
         ec: data.electrical_conductivity ?? data.ec ?? '-',
-        soilTemp: data.soilTemperature ?? data.soil_temperature ?? '-',
+        soilTemp: data.soilTemperature ?? data.soil_temperature ?? data.temperature ?? '-',
         timestamp: new Date().toLocaleString('en-GB', {
           year: 'numeric',
           month: '2-digit',
@@ -952,10 +952,10 @@ const AIAnalysis = () => {
               let simCode = null;
               let conditionLabel = '--';
               let rainfallLabel = null;
-              if (temp !== null && humid !== null) {
-                if (humid > 85) { simCode = 61; conditionLabel = t('rainy'); rainfallLabel = 'High humidity'; }
-                else if (humid > 70) { simCode = 2; conditionLabel = t('partlyCloudy'); }
-                else if (humid > 50) { simCode = 3; conditionLabel = t('overcast'); }
+              if (temp !== null) {
+                if (humid !== null && humid > 85) { simCode = 61; conditionLabel = t('rainy'); rainfallLabel = 'High humidity'; }
+                else if (humid !== null && humid > 70) { simCode = 2; conditionLabel = t('partlyCloudy'); }
+                else if (humid !== null && humid > 50) { simCode = 3; conditionLabel = t('overcast'); }
                 else { simCode = 0; conditionLabel = t('clear'); }
               }
 
@@ -965,14 +965,16 @@ const AIAnalysis = () => {
                     <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60">
                       {t('weather')}
                     </p>
-                    {latest?.raw?.latitude && latest?.raw?.longitude && (
+                    {latest?.raw && (
                       <div className="flex items-center gap-1.5 text-neo-cream/50">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
                           <circle cx="12" cy="10" r="3"/>
                         </svg>
                         <span className="font-subheading text-[10px] tracking-wider uppercase">
-                          {Number(latest.raw.latitude).toFixed(2)}, {Number(latest.raw.longitude).toFixed(2)}
+                          {latest?.raw?.latitude && latest?.raw?.longitude 
+                            ? `${Number(latest.raw.latitude).toFixed(2)}, ${Number(latest.raw.longitude).toFixed(2)}` 
+                            : 'Field Station 1'}
                         </span>
                       </div>
                     )}
@@ -1031,7 +1033,7 @@ const AIAnalysis = () => {
                 {latest?.soilTemp && latest.soilTemp !== '-' ? latest.soilTemp : '--'}
               </p>
               {latest?.soilTemp && latest.soilTemp !== '-' && (
-                <span className="font-subheading text-xl text-neo-cream/60">°C</span>
+                <span className="font-heading text-2xl text-neo-cream/60">°C</span>
               )}
             </div>
             {/* Status badge */}
@@ -1192,7 +1194,7 @@ const AIAnalysis = () => {
                   <table className="w-full text-xs font-body">
                     <thead>
                       <tr style={{backgroundColor:'#0d0d0d'}} className="text-neo-cream/60 uppercase tracking-wide">
-                        {[t('tableDevice'), t('tableTemp'), t('tableHumid'), t('tableSoil'), t('tableN'), t('tableP'), t('tableK'), t('tablePh'), t('tableEc'), t('tableTime')].map(h => (
+                        {[t('tableDevice'), t('tableTemp'), t('tableHumid'), t('tableSoil'), t('tableN'), t('tableP'), t('tableK'), t('tablePh'), t('tableTime')].map(h => (
                           <th key={h} className="px-4 py-3 text-left font-subheading whitespace-nowrap border-b border-neo-cream/10">{h}</th>
                         ))}
                       </tr>
@@ -1209,7 +1211,6 @@ const AIAnalysis = () => {
                           <td className="px-4 py-3 text-neo-green-light">{d.phosphorus}</td>
                           <td className="px-4 py-3 text-neo-green-light">{d.potassium}</td>
                           <td className="px-4 py-3 text-neo-green-light">{d.phLevel}</td>
-                          <td className="px-4 py-3 text-neo-green-light">{d.ec}</td>
                           <td className="px-4 py-3 whitespace-nowrap text-neo-cream/50">{d.timestamp}</td>
                         </tr>
 
@@ -1221,7 +1222,6 @@ const AIAnalysis = () => {
                           <td className="px-4 py-3 text-neo-cream/20">--</td>
                           <td className="px-4 py-3 text-neo-cream/20">--</td>
                           <td className="px-4 py-3 text-neo-cream/20">--</td>
-                          <td className="px-4 py-3 text-neo-green-light/20">--</td>
                           <td className="px-4 py-3 text-neo-green-light/20">--</td>
                           <td className="px-4 py-3 text-neo-green-light/20">--</td>
                           <td className="px-4 py-3 text-neo-green-light/20">--</td>
