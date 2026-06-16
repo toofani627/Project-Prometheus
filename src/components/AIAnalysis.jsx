@@ -164,7 +164,7 @@ const AIAnalysis = () => {
       // ESP32 sends real moisture; server enriches NPK / pH / EC via mock engine
       const newDevice = {
         id: data.device || data.deviceID || data.deviceId || deviceId,
-        temperature: data.temperature ?? '-',
+        temperature: data.air_temperature ?? data.airTemperature ?? data.temperature ?? '-',
         humidity: data.humidity ?? '-',
         soil: data.soil_moisture ?? data.soilMoisture ?? '-',
         nitrogen: data.nitrogen ?? data.n ?? '-',
