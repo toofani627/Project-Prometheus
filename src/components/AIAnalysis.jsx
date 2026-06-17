@@ -1703,42 +1703,30 @@ const AIAnalysis = () => {
           </div>
         )}
 
-        {/* ── ERROR/SUCCESS POPUP ─────────────────────────────────────── */}
+        {/* ── ERROR/SUCCESS TOAST ─────────────────────────────────────── */}
         {((showErrorPopup && aiError) || errorPopup.show) && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-fadeIn">
-            <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[8px_8px_0px_var(--color-neo-cream)] max-w-md w-full p-6 animate-slideUp">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 mt-1">
-                  {errorPopup.type === 'success' ? (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 6L9 17l-5-5"/>
-                    </svg>
-                  ) : (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className={`font-subheading font-bold text-neo-cream mb-2 ${errorPopup.isLarge ? 'text-xl mt-1' : ''}`}>
-                    {errorPopup.message || aiError}
-                  </h3>
-                  {errorPopup.solution && (
-                    <p className="font-body text-neo-cream/60 text-sm">
-                      {errorPopup.solution}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => {
-                    setShowErrorPopup(false);
-                    setAiError('');
-                    setErrorPopup({ show: false, message: '', solution: '' });
-                  }}
-                  className="flex-shrink-0 text-neo-cream/40 hover:text-neo-cream transition-colors text-xl"
-                >
-                  ✕
-                </button>
+          <div className="fixed bottom-6 right-6 z-50 animate-slideUp max-w-sm w-full md:w-auto">
+            <div className="neo-card border-2 border-neo-cream rounded-xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-4 flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                {errorPopup.type === 'success' ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1 pr-2">
+                <h3 className="font-subheading font-bold text-neo-cream text-sm">
+                  {errorPopup.message || aiError}
+                </h3>
+                {errorPopup.solution && (
+                  <p className="font-body text-neo-cream/70 text-xs mt-1">
+                    {errorPopup.solution}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => {
@@ -1746,13 +1734,9 @@ const AIAnalysis = () => {
                   setAiError('');
                   setErrorPopup({ show: false, message: '', solution: '' });
                 }}
-                className={`w-full mt-4 font-subheading font-bold uppercase py-2 px-4 rounded-xl border-2 text-sm transition-all ${
-                  errorPopup.type === 'success'
-                    ? 'bg-neo-green-dark text-neo-cream border-neo-cream'
-                    : 'bg-red-900/40 text-red-400 border-red-500'
-                }`}
+                className="flex-shrink-0 text-neo-cream/40 hover:text-neo-cream transition-colors text-lg"
               >
-                {language === 'hi' ? 'ठीक है' : 'OK'}
+                ✕
               </button>
             </div>
           </div>
