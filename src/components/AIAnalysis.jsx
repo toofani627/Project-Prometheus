@@ -755,7 +755,7 @@ const AIAnalysis = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
 
           {/* SOIL MOISTURE — Full-width horizontal card, huge number + big cream arc */}
-          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-7 sm:col-span-2 lg:col-span-2 flex items-center justify-between min-h-[180px]">
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-7 sm:col-span-2 lg:col-span-2 flex items-center justify-between min-h-[180px]">
             {/* Left: label, badge, huge number */}
             <div className="flex flex-col justify-between h-full">
               <div>
@@ -793,16 +793,16 @@ const AIAnalysis = () => {
               return (
                 <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="flex-shrink-0">
                   {/* Track */}
-                  <path d={arc(START, START+ARC)} fill="none" stroke="rgba(244,231,213,0.12)" strokeWidth={SW} strokeLinecap="round"/>
+                  <path d={arc(START, START+ARC)} fill="none" stroke="rgba(var(--color-neo-cream-rgb),0.12)" strokeWidth={SW} strokeLinecap="round"/>
                   {/* Fill — cream colored like the reference */}
-                  {hasData && <path d={arc(START, endAngle)} fill="none" stroke="#F4E7D5" strokeWidth={SW} strokeLinecap="round"/>}
+                  {hasData && <path d={arc(START, endAngle)} fill="none" stroke="var(--color-neo-cream)" strokeWidth={SW} strokeLinecap="round"/>}
                 </svg>
               );
             })()}
           </div>
 
           {/* pH — Supersaturated Full Rainbow Spectrum */}
-          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6">
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-6">
             <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60 mb-4">{t('phLevelTitle')}</p>
             <p className="font-heading text-7xl text-neo-cream leading-none mb-2">
               {latest?.phLevel && latest.phLevel !== '-' ? latest.phLevel : '--'}
@@ -825,7 +825,7 @@ const AIAnalysis = () => {
                         style={{left:`calc(${pct}% - 7px)`}}
                       >
                         <svg width="14" height="10" viewBox="0 0 14 10">
-                          <polygon points="7,10 0,0 14,0" fill="#F4E7D5"/>
+                          <polygon points="7,10 0,0 14,0" fill="var(--color-neo-cream)"/>
                         </svg>
                       </div>
                     )}
@@ -867,7 +867,7 @@ const AIAnalysis = () => {
 
 
           {/* NPK LEVELS */}
-          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6 sm:col-span-2 lg:col-span-1">
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-6 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between mb-6">
               <p className="font-subheading font-bold text-sm uppercase tracking-widest text-neo-cream">
                 {t('npkLevels')}
@@ -904,7 +904,7 @@ const AIAnalysis = () => {
           </div>
 
           {/* WEATHER CARD */}
-          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6 sm:col-span-2 lg:col-span-1">
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-6 sm:col-span-2 lg:col-span-1">
             {(() => {
               // Weather icon SVGs keyed by WMO code range or description
               const WeatherIcon = ({ code, size = 48, className = '' }) => {
@@ -1062,7 +1062,7 @@ const AIAnalysis = () => {
           </div>
 
           {/* SOIL TEMPERATURE */}
-          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6">
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-6">
             <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60 mb-4">
               {t('soilTemperatureTitle')}
             </p>
@@ -1100,10 +1100,10 @@ const AIAnalysis = () => {
                   <div className="relative mb-0" style={{height:'16px'}}>
                     {pct !== null && (
                       <div
-                        className="absolute bottom-0 w-5 h-5 rounded-full border-2 border-[#010101] shadow-lg transition-all duration-500 z-10"
+                        className="absolute bottom-0 w-5 h-5 rounded-full border-2 border-[var(--color-neo-dark)] shadow-lg transition-all duration-500 z-10"
                         style={{
                           left: `calc(${pct}% - 10px)`,
-                          background: '#F4E7D5'
+                          background: 'var(--color-neo-cream)'
                         }}
                       />
                     )}
@@ -1140,7 +1140,7 @@ const AIAnalysis = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
 
           {/* Col 1 — Device card (with query textarea) */}
-          <div className="neo-card lg:col-span-1" style={{backgroundImage:'none',backgroundColor:'rgba(21,122,38,0.12)',border:'2px solid #157A26',borderRadius:'1rem',boxShadow:'4px 4px 0px #157A26',padding:'1.5rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
+          <div className="neo-card lg:col-span-1" style={{backgroundImage:'none',backgroundColor:'rgba(21,122,38,0.12)',border:'2px solid var(--color-neo-green-dark)',borderRadius:'1rem',boxShadow:'4px 4px 0px var(--color-neo-green-dark)',padding:'1.5rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
             <p className="font-subheading text-xs uppercase tracking-widest text-neo-green-light">
               {t('deviceTitle')}
             </p>
@@ -1157,7 +1157,7 @@ const AIAnalysis = () => {
                   </button>
                   <button
                     onClick={handleLoadMockData}
-                    className="w-full bg-[#111111] text-neo-cream border border-neo-cream/40 rounded-xl py-2.5 text-xs font-bold font-subheading uppercase tracking-widest transition-all hover:bg-neo-cream hover:text-neo-dark"
+                    className="w-full bg-[var(--color-neo-surface)] text-neo-cream border border-neo-cream/40 rounded-xl py-2.5 text-xs font-bold font-subheading uppercase tracking-widest transition-all hover:bg-neo-cream hover:text-neo-dark"
                     style={{backgroundImage:'none'}}
                   >
                     {t('demoDataBtn')}
@@ -1187,7 +1187,7 @@ const AIAnalysis = () => {
                   onChange={(e) => setManualDeviceId(e.target.value)}
                   placeholder="ESP32_FIELD_UNIT_1"
                   className="w-full border border-neo-cream/40 rounded-xl px-3 py-2.5 text-xs font-body text-neo-cream focus:outline-none focus:border-neo-green-light"
-                  style={{backgroundColor:'#111111',backgroundImage:'none'}}
+                  style={{backgroundColor:'var(--color-neo-surface)',backgroundImage:'none'}}
                   required
                 />
                 <button
@@ -1217,7 +1217,7 @@ const AIAnalysis = () => {
           <div className="space-y-4 lg:col-span-2">
             {/* Sensor data table (collapsible) */}
             {devices.length > 0 && (
-              <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] overflow-hidden">
+              <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] overflow-hidden">
                 <div className="p-4 border-b border-neo-cream/20 flex items-center justify-between">
                   <h3 className="font-subheading font-bold text-sm uppercase tracking-widest text-neo-cream">
                     {t('deviceInformation')}
@@ -1232,7 +1232,7 @@ const AIAnalysis = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs font-body">
                     <thead>
-                      <tr style={{backgroundColor:'#0d0d0d'}} className="text-neo-cream/60 uppercase tracking-wide">
+                      <tr style={{backgroundColor:'var(--color-table-1)'}} className="text-neo-cream/60 uppercase tracking-wide">
                         {[t('tableDevice'), t('tableTemp'), t('tableHumid'), t('tableSoil'), t('tableN'), t('tableP'), t('tableK'), t('tablePh'), t('tableTime')].map(h => (
                           <th key={h} className="px-4 py-3 text-left font-subheading whitespace-nowrap border-b border-neo-cream/10">{h}</th>
                         ))}
@@ -1241,7 +1241,7 @@ const AIAnalysis = () => {
                     </thead>
                     <tbody>
                       {(showAllRows ? devices : devices.slice(0, 4)).map((d, i) => (
-                        <tr key={`${d.id}-${i}`} className="border-b border-neo-cream/10 transition-colors" style={{backgroundColor: i%2===0 ? '#111111' : '#0d0d0d'}}>
+                        <tr key={`${d.id}-${i}`} className="border-b border-neo-cream/10 transition-colors" style={{backgroundColor: i%2===0 ? 'var(--color-neo-surface)' : 'var(--color-table-1)'}}>
                           <td className="px-4 py-3 whitespace-nowrap text-neo-cream">{d.id}</td>
                           <td className="px-4 py-3 text-neo-cream">{d.temperature}</td>
                           <td className="px-4 py-3 text-neo-cream">{d.humidity}</td>
@@ -1256,7 +1256,7 @@ const AIAnalysis = () => {
                       ))}
                       {/* Empty row padding so the table doesn't collapse and looks structured */}
                       {(!showAllRows && devices.length < 4) && Array.from({ length: 4 - devices.length }).map((_, i) => (
-                        <tr key={`empty-${i}`} className="border-b border-neo-cream/10 transition-colors" style={{backgroundColor: (devices.length + i)%2===0 ? '#111111' : '#0d0d0d'}}>
+                        <tr key={`empty-${i}`} className="border-b border-neo-cream/10 transition-colors" style={{backgroundColor: (devices.length + i)%2===0 ? 'var(--color-neo-surface)' : 'var(--color-table-1)'}}>
                           <td className="px-4 py-3 whitespace-nowrap text-neo-cream/20">--</td>
                           <td className="px-4 py-3 text-neo-cream/20">--</td>
                           <td className="px-4 py-3 text-neo-cream/20">--</td>
@@ -1280,7 +1280,7 @@ const AIAnalysis = () => {
               <div className="flex gap-3">
                 <button
                   onClick={handleExportJSON}
-                  className="flex-1 neo-card border-2 border-neo-cream text-neo-cream rounded-xl py-3 text-xs font-bold font-subheading uppercase shadow-[4px_4px_0px_#F4E7D5] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-[2px_2px_0px_#F4E7D5] transition-all"
+                  className="flex-1 neo-card border-2 border-neo-cream text-neo-cream rounded-xl py-3 text-xs font-bold font-subheading uppercase shadow-[4px_4px_0px_var(--color-neo-cream)] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-[2px_2px_0px_var(--color-neo-cream)] transition-all"
                 >
                   {language === 'hi' ? 'JSON निर्यात' : 'EXPORT JSON'}
                 </button>
@@ -1297,7 +1297,7 @@ const AIAnalysis = () => {
         </div>
 
         {/* ── STAGE & AREA (Full Width Row) ────────────────────────────── */}
-        <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-5 mb-6">
+        <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-5 mb-6">
           <h3 className="font-subheading font-bold text-sm uppercase tracking-widest text-neo-cream mb-4">
             {language === 'hi' ? 'चरण और क्षेत्र' : 'STAGE & AREA'}
           </h3>
@@ -1441,7 +1441,7 @@ const AIAnalysis = () => {
               // Navigate to the dedicated results page, passing requestBody in router state
               navigate('/analysis-results', { state: { requestBody } });
             }}
-            className="w-full font-body font-bold uppercase text-neo-cream text-xl sm:text-2xl py-5 rounded-2xl border-2 transition-all duration-200 bg-neo-green-dark border-neo-cream shadow-[6px_6px_0px_#F4E7D5] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[3px_3px_0px_#F4E7D5]"
+            className="w-full font-body font-bold uppercase text-neo-cream text-xl sm:text-2xl py-5 rounded-2xl border-2 transition-all duration-200 bg-neo-green-dark border-neo-cream shadow-[6px_6px_0px_var(--color-neo-cream)] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[3px_3px_0px_var(--color-neo-cream)]"
           >
             {t('runAIAnalysis')}
           </button>
@@ -1450,9 +1450,9 @@ const AIAnalysis = () => {
 
         {/* ── TERMINAL LOADING ANIMATION ──────────────────────────────── */}
         {(aiLoading || (loadingStep > 0 && !showCropResults)) && (
-          <div className="mb-6 rounded-2xl overflow-hidden border-2 border-neo-green-dark shadow-[4px_4px_0px_#157A26]" style={{background:'#010101'}}>
+          <div className="mb-6 rounded-2xl overflow-hidden border-2 border-neo-green-dark shadow-[4px_4px_0px_var(--color-neo-green-dark)]" style={{background:'var(--color-neo-dark)'}}>
             {/* Title bar */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-neo-green-dark/30" style={{background:'#0a0a0a'}}>
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-neo-green-dark/30" style={{background:'var(--color-table-2)'}}>
               <div className="w-3 h-3 rounded-full bg-red-500/60"/>
               <div className="w-3 h-3 rounded-full bg-yellow-500/60"/>
               <div className="w-3 h-3 rounded-full bg-green-500/60"/>
@@ -1522,7 +1522,7 @@ const AIAnalysis = () => {
               >
                 {/* Hardware switch knob */}
                 <div className={`w-11 h-6 rounded-full relative transition-all duration-200 flex-shrink-0 ${companionMode ? 'bg-neo-green-dark' : 'bg-neo-cream/15'}`}>
-                  <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-200 ${companionMode ? 'left-6 bg-neo-cream shadow-[0_0_6px_rgba(244,231,213,0.8)]' : 'left-1 bg-neo-cream/40'}`}/>
+                  <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-200 ${companionMode ? 'left-6 bg-neo-cream shadow-[0_0_6px_rgba(var(--color-neo-cream-rgb),0.8)]' : 'left-1 bg-neo-cream/40'}`}/>
                 </div>
                 <span className="font-subheading text-[11px] uppercase tracking-widest whitespace-nowrap">
                   {language === 'hi' ? 'साथी पौधारोपण' : language === 'ta' ? 'துணை நடவு' : 'COMPANION PLANTING'}
@@ -1541,12 +1541,12 @@ const AIAnalysis = () => {
                     key={i}
                     className={`relative rounded-2xl border-2 p-5 flex flex-col transition-all duration-200 hover:-translate-y-0.5 ${
                       isTop
-                        ? 'border-neo-green-dark shadow-[4px_4px_0px_#157A26]'
+                        ? 'border-neo-green-dark shadow-[4px_4px_0px_var(--color-neo-green-dark)]'
                         : rank <= 3
-                        ? 'border-neo-cream/25 shadow-[3px_3px_0px_rgba(244,231,213,0.12)]'
+                        ? 'border-neo-cream/25 shadow-[3px_3px_0px_rgba(var(--color-neo-cream-rgb),0.12)]'
                         : 'border-neo-cream/12 opacity-80'
                     }`}
-                    style={{background:'#111111', backgroundImage:'none'}}
+                    style={{background:'var(--color-neo-surface)', backgroundImage:'none'}}
                   >
                     {/* Rank badge */}
                     <span className={`absolute top-4 right-4 font-mono text-xs font-bold px-2 py-1 rounded-lg ${
@@ -1580,12 +1580,12 @@ const AIAnalysis = () => {
                         <span className="font-heading text-5xl text-neo-cream leading-none">{matchPct}</span>
                         <span className="font-subheading text-lg text-neo-cream/40">%</span>
                       </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{background:'rgba(244,231,213,0.08)'}}>
+                      <div className="h-1.5 rounded-full overflow-hidden" style={{background:'rgba(var(--color-neo-cream-rgb),0.08)'}}>
                         <div
                           className="h-full rounded-full transition-all duration-1000"
                           style={{
                             width: `${matchPct}%`,
-                            background: isTop ? '#157A26' : rank <= 3 ? 'rgba(244,231,213,0.35)' : 'rgba(244,231,213,0.15)'
+                            background: isTop ? 'var(--color-neo-green-dark)' : rank <= 3 ? 'rgba(var(--color-neo-cream-rgb),0.35)' : 'rgba(var(--color-neo-cream-rgb),0.15)'
                           }}
                         />
                       </div>
@@ -1626,7 +1626,7 @@ const AIAnalysis = () => {
                       }`}
                       style={{
                         backgroundImage: 'none',
-                        backgroundColor: isTop ? '#157A26' : 'transparent'
+                        backgroundColor: isTop ? 'var(--color-neo-green-dark)' : 'transparent'
                       }}
                     >
                       {language === 'hi' ? 'अभी लगाएं →' : language === 'ta' ? 'இப்போது நடவும் →' : 'PLANT NOW →'}
@@ -1654,7 +1654,7 @@ const AIAnalysis = () => {
 
         {/* ── SOIL HEALTH SCORE ────────────────────────────────────────── */}
         {showCropResults && parsedResult?.soil_score != null && (
-          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6 mb-6 animate-fadeIn">
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-6 mb-6 animate-fadeIn">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
               <div>
                 <h3 className="font-heading text-2xl text-neo-cream uppercase leading-none mb-1">
@@ -1673,13 +1673,13 @@ const AIAnalysis = () => {
               </div>
             </div>
             {/* Score bar */}
-            <div className="h-3 rounded-full overflow-hidden mb-5" style={{background:'rgba(244,231,213,0.08)'}}>
+            <div className="h-3 rounded-full overflow-hidden mb-5" style={{background:'rgba(var(--color-neo-cream-rgb),0.08)'}}>
               <div
                 className="h-full rounded-full transition-all duration-1000"
                 style={{
                   width: `${parsedResult.soil_score}%`,
                   background: parsedResult.soil_score >= 75
-                    ? 'linear-gradient(to right, #157A26, #22c55e)'
+                    ? 'linear-gradient(to right, var(--color-neo-green-dark), #22c55e)'
                     : parsedResult.soil_score >= 50
                     ? 'linear-gradient(to right, #a16207, #eab308)'
                     : 'linear-gradient(to right, #991b1b, #ef4444)'
@@ -1706,7 +1706,7 @@ const AIAnalysis = () => {
         {/* ── ERROR/SUCCESS POPUP ─────────────────────────────────────── */}
         {((showErrorPopup && aiError) || errorPopup.show) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-fadeIn">
-            <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[8px_8px_0px_#F4E7D5] max-w-md w-full p-6 animate-slideUp">
+            <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[8px_8px_0px_var(--color-neo-cream)] max-w-md w-full p-6 animate-slideUp">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0 mt-1">
                   {errorPopup.type === 'success' ? (

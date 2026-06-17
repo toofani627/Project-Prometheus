@@ -147,20 +147,20 @@ const Profile = () => {
 
   // ─── Shared card style ───────────────────────────────────────────────────────
   const cardStyle = {
-    backgroundColor: '#111111',
+    backgroundColor: 'var(--color-neo-surface)',
     backgroundImage: 'none',
-    border: '2px solid #F4E7D5',
+    border: '2px solid var(--color-neo-cream)',
     borderRadius: '1rem',
-    boxShadow: '4px 4px 0px #F4E7D5',
+    boxShadow: '4px 4px 0px var(--color-neo-cream)',
     padding: '1.5rem',
     marginBottom: '1.25rem'
   };
 
   const inputStyle = {
-    backgroundColor: '#010101',
+    backgroundColor: 'var(--color-neo-dark)',
     backgroundImage: 'none',
-    color: '#F4E7D5',
-    border: '1px solid rgba(244,231,213,0.4)',
+    color: 'var(--color-neo-cream)',
+    border: '1px solid rgba(var(--color-neo-cream-rgb),0.4)',
     borderRadius: '0.75rem',
     padding: '0.75rem 1rem',
     width: '100%',
@@ -169,26 +169,26 @@ const Profile = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', color: '#F4E7D5' }}>
+    <div style={{ minHeight: '100vh', color: 'var(--color-neo-cream)' }}>
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '2rem 1rem' }}>
 
         {/* Header */}
-        <div style={{ borderBottom: '1px solid rgba(244,231,213,0.2)', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
-          <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.5)', marginBottom: '0.25rem', fontFamily: 'inherit' }}>
+        <div style={{ borderBottom: '1px solid rgba(var(--color-neo-cream-rgb),0.2)', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+          <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.5)', marginBottom: '0.25rem', fontFamily: 'inherit' }}>
             {t('farmerAccount')}
           </p>
           <h1 style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', textTransform: 'uppercase', lineHeight: 1, marginBottom: '0.5rem' }}>
             {displayTransliterated}
           </h1>
-          <p style={{ fontSize: '0.75rem', color: 'rgba(244,231,213,0.4)' }}>
+          <p style={{ fontSize: '0.75rem', color: 'rgba(var(--color-neo-cream-rgb),0.4)' }}>
             {t('updateCropRecords')}
           </p>
         </div>
 
         {isLoading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 0', gap: '0.75rem' }}>
-            <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(244,231,213,0.2)', borderTopColor: '#F4E7D5', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.4)' }}>
+            <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(var(--color-neo-cream-rgb),0.2)', borderTopColor: 'var(--color-neo-cream)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.4)' }}>
               {t('loading')}
             </p>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -198,14 +198,14 @@ const Profile = () => {
             {/* ── Section 1: Farmer Name ────────────────────────────────── */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid var(--color-neo-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>01</span>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
                     {t('farmerNameLabel')}
                   </p>
-                  <p style={{ fontSize: '0.7rem', color: 'rgba(244,231,213,0.4)' }}>
+                  <p style={{ fontSize: '0.7rem', color: 'rgba(var(--color-neo-cream-rgb),0.4)' }}>
                     {t('enterNameDesc')}
                   </p>
                 </div>
@@ -222,23 +222,23 @@ const Profile = () => {
             {/* ── Section 2: Last Device ────────────────────────────────── */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid var(--color-neo-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>02</span>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
                     {t('lastDeviceConnected')}
                   </p>
-                  <p style={{ fontSize: '0.7rem', color: 'rgba(244,231,213,0.4)' }}>
+                  <p style={{ fontSize: '0.7rem', color: 'rgba(var(--color-neo-cream-rgb),0.4)' }}>
                     {t('setAutomatically')}
                   </p>
                 </div>
               </div>
-              <div style={{ backgroundColor: '#1a1a1a', backgroundImage: 'none', border: '1px solid rgba(244,231,213,0.15)', borderRadius: '0.75rem', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'rgba(244,231,213,0.4)', flexShrink: 0 }}>
+              <div style={{ backgroundColor: 'var(--color-neo-surface-2)', backgroundImage: 'none', border: '1px solid rgba(var(--color-neo-cream-rgb),0.15)', borderRadius: '0.75rem', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'rgba(var(--color-neo-cream-rgb),0.4)', flexShrink: 0 }}>
                   <rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 3H8M12 3v4"/>
                 </svg>
-                <span style={{ fontSize: '0.875rem', color: lastDevice ? '#F4E7D5' : 'rgba(244,231,213,0.3)', fontFamily: 'monospace' }}>
+                <span style={{ fontSize: '0.875rem', color: lastDevice ? 'var(--color-neo-cream)' : 'rgba(var(--color-neo-cream-rgb),0.3)', fontFamily: 'monospace' }}>
                   {lastDevice || t('noDeviceRecorded')}
                 </span>
               </div>
@@ -248,34 +248,34 @@ const Profile = () => {
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid var(--color-neo-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>03</span>
                   </div>
                   <div>
                     <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
                       {t('lastCropsTitle')}
                     </p>
-                    <p style={{ fontSize: '0.7rem', color: 'rgba(244,231,213,0.4)' }}>
+                    <p style={{ fontSize: '0.7rem', color: 'rgba(var(--color-neo-cream-rgb),0.4)' }}>
                       {t('mostRecentFirst')}
                     </p>
                   </div>
                 </div>
-                <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(244,231,213,0.5)', background: 'rgba(244,231,213,0.07)', border: '1px solid rgba(244,231,213,0.2)', borderRadius: '999px', padding: '0.2rem 0.6rem', flexShrink: 0 }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(var(--color-neo-cream-rgb),0.5)', background: 'rgba(var(--color-neo-cream-rgb),0.07)', border: '1px solid rgba(var(--color-neo-cream-rgb),0.2)', borderRadius: '999px', padding: '0.2rem 0.6rem', flexShrink: 0 }}>
                   {crops.length} {crops.length === 1 ? t('cropSingular') : t('cropPlural')}
                 </span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 {crops.map((crop, idx) => (
-                  <div key={crop.id} style={{ backgroundColor: '#1a1a1a', backgroundImage: 'none', border: '1px solid rgba(244,231,213,0.15)', borderRadius: '0.75rem', overflow: 'hidden' }}>
+                  <div key={crop.id} style={{ backgroundColor: 'var(--color-neo-surface-2)', backgroundImage: 'none', border: '1px solid rgba(var(--color-neo-cream-rgb),0.15)', borderRadius: '0.75rem', overflow: 'hidden' }}>
                     <div style={{ padding: '0.75rem 1rem' }}>
-                      <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.35)', marginBottom: '0.5rem' }}>
+                      <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.35)', marginBottom: '0.5rem' }}>
                         {idx === 0 ? t('lastCropLabel') :
                          idx === 1 ? t('secondLastLabel') : `#${idx + 1}`}
                       </p>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.45)', marginBottom: '0.35rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.45)', marginBottom: '0.35rem' }}>
                             {t('cropNameLabel')}
                           </label>
                           <input
@@ -287,7 +287,7 @@ const Profile = () => {
                           />
                         </div>
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.45)', marginBottom: '0.35rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.45)', marginBottom: '0.35rem' }}>
                             {t('dateHarvestedLabel')}
                           </label>
                           <input
@@ -299,7 +299,7 @@ const Profile = () => {
                         </div>
                       </div>
                     </div>
-                    <div style={{ borderTop: '1px solid rgba(244,231,213,0.08)', padding: '0.4rem 1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ borderTop: '1px solid rgba(var(--color-neo-cream-rgb),0.08)', padding: '0.4rem 1rem', display: 'flex', justifyContent: 'flex-end' }}>
                       <button
                         onClick={() => removeCrop(crop.id)}
                         style={{ fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(239,68,68,0.6)', background: 'none', border: 'none', cursor: 'pointer' }}
@@ -315,9 +315,9 @@ const Profile = () => {
 
               <button
                 onClick={addCrop}
-                style={{ width: '100%', border: '2px dashed rgba(244,231,213,0.25)', borderRadius: '0.75rem', padding: '0.875rem', fontSize: '0.7rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.5)', background: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={e => { e.target.style.borderColor = 'rgba(244,231,213,0.5)'; e.target.style.color = '#F4E7D5'; }}
-                onMouseLeave={e => { e.target.style.borderColor = 'rgba(244,231,213,0.25)'; e.target.style.color = 'rgba(244,231,213,0.5)'; }}
+                style={{ width: '100%', border: '2px dashed rgba(var(--color-neo-cream-rgb),0.25)', borderRadius: '0.75rem', padding: '0.875rem', fontSize: '0.7rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.5)', background: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.target.style.borderColor = 'rgba(var(--color-neo-cream-rgb),0.5)'; e.target.style.color = 'var(--color-neo-cream)'; }}
+                onMouseLeave={e => { e.target.style.borderColor = 'rgba(var(--color-neo-cream-rgb),0.25)'; e.target.style.color = 'rgba(var(--color-neo-cream-rgb),0.5)'; }}
               >
                 {t('addNewCropBtn')}
               </button>
@@ -327,45 +327,45 @@ const Profile = () => {
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid #F4E7D5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', border: '2px solid var(--color-neo-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.7rem' }}>04</span>
                   </div>
                   <div>
                     <p style={{ fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.1rem' }}>
                       {t('fertilizersUsedTitle')}
                     </p>
-                    <p style={{ fontSize: '0.7rem', color: 'rgba(244,231,213,0.4)' }}>
+                    <p style={{ fontSize: '0.7rem', color: 'rgba(var(--color-neo-cream-rgb),0.4)' }}>
                       {t('inputsLast12Months')}
                     </p>
                   </div>
                 </div>
-                <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(244,231,213,0.5)', background: 'rgba(244,231,213,0.07)', border: '1px solid rgba(244,231,213,0.2)', borderRadius: '999px', padding: '0.2rem 0.6rem', flexShrink: 0 }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(var(--color-neo-cream-rgb),0.5)', background: 'rgba(var(--color-neo-cream-rgb),0.07)', border: '1px solid rgba(var(--color-neo-cream-rgb),0.2)', borderRadius: '999px', padding: '0.2rem 0.6rem', flexShrink: 0 }}>
                   {fertilizers.length} {fertilizers.length === 1 ? t('recordSingular') : t('recordPlural')}
                 </span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 {fertilizers.map((fert, fidx) => (
-                  <div key={fert.id} style={{ backgroundColor: '#1a1a1a', backgroundImage: 'none', border: '1px solid rgba(244,231,213,0.15)', borderRadius: '0.75rem', overflow: 'hidden' }}>
+                  <div key={fert.id} style={{ backgroundColor: 'var(--color-neo-surface-2)', backgroundImage: 'none', border: '1px solid rgba(var(--color-neo-cream-rgb),0.15)', borderRadius: '0.75rem', overflow: 'hidden' }}>
                     <div style={{ padding: '0.75rem 1rem' }}>
-                      <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.35)', marginBottom: '0.5rem' }}>
+                      <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.35)', marginBottom: '0.5rem' }}>
                         {t('entry')} {fidx + 1}
                       </p>
                       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem' }}>
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.45)', marginBottom: '0.35rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.45)', marginBottom: '0.35rem' }}>
                             {t('fertilizerNameLabel')}
                           </label>
                           <input type="text" value={fert.name} onChange={e => updateFertilizer(fert.id, 'name', e.target.value)} placeholder={t('fertPlaceholder')} style={inputStyle} />
                         </div>
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.45)', marginBottom: '0.35rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.45)', marginBottom: '0.35rem' }}>
                             {t('amountLabel')}
                           </label>
                           <input type="number" step="0.1" min="0" value={fert.amount} onChange={e => updateFertilizer(fert.id, 'amount', e.target.value)} placeholder={t('amountPlaceholder')} style={inputStyle} />
                         </div>
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.45)', marginBottom: '0.35rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.45)', marginBottom: '0.35rem' }}>
                             {t('perArea')}
                           </label>
                           <select value={fert.unit} onChange={e => updateFertilizer(fert.id, 'unit', e.target.value)} style={{ ...inputStyle, colorScheme: 'dark' }}>
@@ -376,7 +376,7 @@ const Profile = () => {
                         </div>
                       </div>
                     </div>
-                    <div style={{ borderTop: '1px solid rgba(244,231,213,0.08)', padding: '0.4rem 1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ borderTop: '1px solid rgba(var(--color-neo-cream-rgb),0.08)', padding: '0.4rem 1rem', display: 'flex', justifyContent: 'flex-end' }}>
                       <button
                         onClick={() => removeFertilizer(fert.id)}
                         style={{ fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(239,68,68,0.6)', background: 'none', border: 'none', cursor: 'pointer' }}
@@ -392,9 +392,9 @@ const Profile = () => {
 
               <button
                 onClick={addFertilizer}
-                style={{ width: '100%', border: '2px dashed rgba(244,231,213,0.25)', borderRadius: '0.75rem', padding: '0.875rem', fontSize: '0.7rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(244,231,213,0.5)', background: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={e => { e.target.style.borderColor = 'rgba(244,231,213,0.5)'; e.target.style.color = '#F4E7D5'; }}
-                onMouseLeave={e => { e.target.style.borderColor = 'rgba(244,231,213,0.25)'; e.target.style.color = 'rgba(244,231,213,0.5)'; }}
+                style={{ width: '100%', border: '2px dashed rgba(var(--color-neo-cream-rgb),0.25)', borderRadius: '0.75rem', padding: '0.875rem', fontSize: '0.7rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.5)', background: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.target.style.borderColor = 'rgba(var(--color-neo-cream-rgb),0.5)'; e.target.style.color = 'var(--color-neo-cream)'; }}
+                onMouseLeave={e => { e.target.style.borderColor = 'rgba(var(--color-neo-cream-rgb),0.25)'; e.target.style.color = 'rgba(var(--color-neo-cream-rgb),0.5)'; }}
               >
                 {t('addNewFertilizerBtn')}
               </button>
@@ -406,17 +406,17 @@ const Profile = () => {
               disabled={isSaving}
               style={{
                 width: '100%',
-                backgroundColor: '#157a26',
+                backgroundColor: 'var(--color-neo-green-dark)',
                 backgroundImage: 'none',
-                color: '#F4E7D5',
-                border: '2px solid #F4E7D5',
+                color: 'var(--color-neo-cream)',
+                border: '2px solid var(--color-neo-cream)',
                 borderRadius: '1rem',
                 padding: '1.25rem',
                 fontSize: '1.25rem',
                 fontFamily: 'inherit',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
-                boxShadow: isSaving ? '2px 2px 0px #F4E7D5' : '6px 6px 0px #F4E7D5',
+                boxShadow: isSaving ? '2px 2px 0px var(--color-neo-cream)' : '6px 6px 0px var(--color-neo-cream)',
                 transform: isSaving ? 'translate(4px,4px)' : 'translate(0,0)',
                 cursor: isSaving ? 'not-allowed' : 'pointer',
                 opacity: isSaving ? 0.7 : 1,
@@ -429,7 +429,7 @@ const Profile = () => {
             {showSaveMessage && (
               <div style={{
                 marginTop: '1rem',
-                border: `2px solid ${saveError ? 'rgba(239,68,68,0.6)' : '#157a26'}`,
+                border: `2px solid ${saveError ? 'rgba(239,68,68,0.6)' : 'var(--color-neo-green-dark)'}`,
                 borderRadius: '0.75rem',
                 padding: '0.75rem 1rem',
                 textAlign: 'center',
@@ -446,7 +446,7 @@ const Profile = () => {
               </div>
             )}
 
-            <p style={{ textAlign: 'center', fontSize: '0.65rem', color: 'rgba(244,231,213,0.2)', marginTop: '1.5rem', letterSpacing: '0.05em' }}>
+            <p style={{ textAlign: 'center', fontSize: '0.65rem', color: 'rgba(var(--color-neo-cream-rgb),0.2)', marginTop: '1.5rem', letterSpacing: '0.05em' }}>
               {t('dataSyncCloud')}
             </p>
 

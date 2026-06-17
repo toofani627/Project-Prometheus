@@ -147,11 +147,11 @@ const AnalysisResults = () => {
         {/* ── TERMINAL ───────────────────────────────────────────────── */}
         {(!showResults || aiError) && (
           <div
-            className="mb-8 rounded-2xl overflow-hidden border-2 border-neo-green-dark shadow-[4px_4px_0px_#157A26]"
-            style={{ background: '#010101' }}
+            className="mb-8 rounded-2xl overflow-hidden border-2 border-neo-green-dark shadow-[4px_4px_0px_var(--color-neo-green-dark)]"
+            style={{ background: 'var(--color-neo-dark)' }}
           >
             {/* Title bar */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-neo-green-dark/30" style={{ background: '#0a0a0a' }}>
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-neo-green-dark/30" style={{ background: 'var(--color-table-2)' }}>
               <div className="w-3 h-3 rounded-full bg-red-500/60" />
               <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
               <div className="w-3 h-3 rounded-full bg-green-500/60" />
@@ -257,10 +257,10 @@ const AnalysisResults = () => {
                     key={i}
                     className={`relative rounded-2xl border-2 p-5 flex flex-col transition-all duration-200 hover:-translate-y-0.5 ${
                       isTop
-                        ? 'border-neo-green-dark shadow-[4px_4px_0px_#157A26]'
-                        : 'border-neo-cream/25 shadow-[3px_3px_0px_rgba(244,231,213,0.12)]'
+                        ? 'border-neo-green-dark shadow-[4px_4px_0px_var(--color-neo-green-dark)]'
+                        : 'border-neo-cream/25 shadow-[3px_3px_0px_rgba(var(--color-neo-cream-rgb),0.12)]'
                     }`}
-                    style={{ background: '#111111', backgroundImage: 'none' }}
+                    style={{ background: 'var(--color-neo-surface)', backgroundImage: 'none' }}
                   >
                     {/* Rank badge */}
                     <span className={`absolute top-4 right-4 font-mono text-xs font-bold px-2 py-1 rounded-lg ${
@@ -289,12 +289,12 @@ const AnalysisResults = () => {
                         <span className="font-heading text-5xl text-neo-cream leading-none">{matchPct}</span>
                         <span className="font-subheading text-lg text-neo-cream/40">%</span>
                       </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(244,231,213,0.08)' }}>
+                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(var(--color-neo-cream-rgb),0.08)' }}>
                         <div
                           className="h-full rounded-full transition-all duration-1000"
                           style={{
                             width: `${matchPct}%`,
-                            background: isTop ? '#157A26' : 'rgba(244,231,213,0.35)',
+                            background: isTop ? 'var(--color-neo-green-dark)' : 'rgba(var(--color-neo-cream-rgb),0.35)',
                           }}
                         />
                       </div>
@@ -316,7 +316,7 @@ const AnalysisResults = () => {
                       }`}
                       style={{
                         backgroundImage: 'none',
-                        backgroundColor: isTop ? '#157A26' : 'transparent',
+                        backgroundColor: isTop ? 'var(--color-neo-green-dark)' : 'transparent',
                       }}
                     >
                       {language === 'hi' ? 'अभी लगाएं →' : language === 'ta' ? 'இப்போது நடவும் →' : 'PLANT NOW →'}
@@ -344,7 +344,7 @@ const AnalysisResults = () => {
                 </button>
 
                 {showExtended && (
-                  <div className="mt-3 rounded-2xl border border-neo-cream/12 overflow-hidden animate-fadeIn" style={{ background: '#0d0d0d', backgroundImage: 'none' }}>
+                  <div className="mt-3 rounded-2xl border border-neo-cream/12 overflow-hidden animate-fadeIn" style={{ background: 'var(--color-table-1)', backgroundImage: 'none' }}>
                     {/* Header row */}
                     <div className="flex items-center gap-4 px-5 py-2.5 border-b border-neo-cream/8">
                       <span className="font-mono text-[9px] text-neo-cream/25 uppercase w-8">Rank</span>
@@ -368,8 +368,8 @@ const AnalysisResults = () => {
                           {/* Name + mini bar */}
                           <div className="flex-1 min-w-0">
                             <p className="font-heading text-base text-neo-cream/70 leading-none mb-1 truncate">{crop.name}</p>
-                            <div className="h-1 rounded-full overflow-hidden w-full max-w-[120px]" style={{ background: 'rgba(244,231,213,0.06)' }}>
-                              <div className="h-full rounded-full" style={{ width: `${matchPct}%`, background: 'rgba(244,231,213,0.2)' }} />
+                            <div className="h-1 rounded-full overflow-hidden w-full max-w-[120px]" style={{ background: 'rgba(var(--color-neo-cream-rgb),0.06)' }}>
+                              <div className="h-full rounded-full" style={{ width: `${matchPct}%`, background: 'rgba(var(--color-neo-cream-rgb),0.2)' }} />
                             </div>
                           </div>
 
@@ -405,7 +405,7 @@ const AnalysisResults = () => {
 
         {/* ── SOIL HEALTH SCORE ──────────────────────────────────────── */}
         {showResults && parsedResult?.soil_score != null && (
-          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6 mb-6 animate-fadeIn">
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-6 mb-6 animate-fadeIn">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
               <div>
                 <h3 className="font-heading text-2xl text-neo-cream uppercase leading-none mb-1">
@@ -422,14 +422,14 @@ const AnalysisResults = () => {
                 <span className="font-subheading text-2xl text-neo-cream/35">/100</span>
               </div>
             </div>
-            <div className="h-3 rounded-full overflow-hidden mb-5" style={{ background: 'rgba(244,231,213,0.08)' }}>
+            <div className="h-3 rounded-full overflow-hidden mb-5" style={{ background: 'rgba(var(--color-neo-cream-rgb),0.08)' }}>
               <div
                 className="h-full rounded-full transition-all duration-1000"
                 style={{
                   width: `${parsedResult.soil_score}%`,
                   background:
                     parsedResult.soil_score >= 75
-                      ? 'linear-gradient(to right, #157A26, #22c55e)'
+                      ? 'linear-gradient(to right, var(--color-neo-green-dark), #22c55e)'
                       : parsedResult.soil_score >= 50
                       ? 'linear-gradient(to right, #a16207, #eab308)'
                       : 'linear-gradient(to right, #991b1b, #ef4444)',

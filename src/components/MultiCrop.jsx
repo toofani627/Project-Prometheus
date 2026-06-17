@@ -138,7 +138,7 @@ const MultiCrop = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Input Card */}
-          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6 h-fit">
+          <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-6 h-fit">
             <h2 className="font-subheading font-bold text-sm uppercase tracking-widest text-neo-cream mb-6">
               {language === 'en' ? 'SELECT YOUR CROP' : language === 'hi' ? 'अपनी फसल चुनें' : 'உங்கள் பயிரைத் தேர்ந்தெடுக்கவும்'}
             </h2>
@@ -193,7 +193,7 @@ const MultiCrop = () => {
               <button
                 onClick={handleFindCompanion}
                 disabled={loading}
-                className="w-full bg-neo-green-dark text-neo-cream border-2 border-neo-cream rounded-xl py-4 font-heading text-xl uppercase shadow-[4px_4px_0px_#F4E7D5] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[1px_1px_0px_#F4E7D5] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-neo-green-dark text-neo-cream border-2 border-neo-cream rounded-xl py-4 font-heading text-xl uppercase shadow-[4px_4px_0px_var(--color-neo-cream)] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[1px_1px_0px_var(--color-neo-cream)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{backgroundImage:'none'}}
               >
                 {loading
@@ -218,7 +218,7 @@ const MultiCrop = () => {
 
             {/* Result Card */}
             {result && !loading && (
-              <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_#F4E7D5] p-6">
+              <div className="neo-card border-2 border-neo-cream rounded-2xl shadow-[4px_4px_0px_var(--color-neo-cream)] p-6">
                 <h3 className="font-subheading font-bold text-sm uppercase tracking-widest text-neo-cream mb-6">
                   {language === 'en' ? 'BEST COMPANION' : language === 'hi' ? 'सर्वश्रेष्ठ साथी' : 'சிறந்த கூட்டுப் பயிர்'}
                 </h3>
@@ -234,7 +234,7 @@ const MultiCrop = () => {
                   ) : (
                     <>
                       {(result.recommendation || result.companion_crop) && (
-                        <div className="rounded-xl border border-neo-cream/30 p-4" style={{backgroundColor:'#1a1a1a', backgroundImage:'none'}}>
+                        <div className="rounded-xl border border-neo-cream/30 p-4" style={{backgroundColor:'var(--color-neo-surface-2)', backgroundImage:'none'}}>
                           <p className="font-subheading text-[10px] uppercase tracking-widest text-neo-green-light mb-2">
                             {language === 'en' ? 'COMPANION CROP' : language === 'hi' ? 'साथी फसल' : 'கூட்டுப் பயிர்'}
                           </p>
@@ -245,7 +245,7 @@ const MultiCrop = () => {
                       )}
 
                       {result.reason && (
-                        <div className="rounded-xl border border-neo-cream/30 p-4" style={{backgroundColor:'#1a1a1a', backgroundImage:'none'}}>
+                        <div className="rounded-xl border border-neo-cream/30 p-4" style={{backgroundColor:'var(--color-neo-surface-2)', backgroundImage:'none'}}>
                           <p className="font-subheading text-[10px] uppercase tracking-widest text-neo-cream/50 mb-2">
                             {language === 'en' ? 'WHY' : language === 'hi' ? 'क्यों' : 'ஏன்'}
                           </p>
@@ -254,7 +254,7 @@ const MultiCrop = () => {
                       )}
 
                       {result.benefits && (
-                        <div className="rounded-xl border border-neo-cream/30 p-4" style={{backgroundColor:'#1a1a1a', backgroundImage:'none'}}>
+                        <div className="rounded-xl border border-neo-cream/30 p-4" style={{backgroundColor:'var(--color-neo-surface-2)', backgroundImage:'none'}}>
                           <p className="font-subheading text-[10px] uppercase tracking-widest text-neo-cream/50 mb-3">
                             {language === 'en' ? 'BENEFITS' : language === 'hi' ? 'लाभ' : 'நன்மைகள்'}
                           </p>

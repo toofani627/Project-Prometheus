@@ -31,16 +31,16 @@ const Login = () => {
     <div
       className="min-h-screen flex items-center justify-center px-4"
       style={{
-        backgroundColor: '#010101',
+        backgroundColor: 'var(--color-neo-dark)',
         backgroundImage:
-          'linear-gradient(to right, rgba(244,231,213,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(244,231,213,0.05) 1px, transparent 1px)',
+          'linear-gradient(to right, rgba(var(--color-neo-cream-rgb),0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(var(--color-neo-cream-rgb),0.05) 1px, transparent 1px)',
         backgroundSize: '30px 30px',
       }}
     >
       {/* Card */}
       <div
-        className={`w-full max-w-sm border-2 border-neo-cream rounded-3xl shadow-[8px_8px_0px_#F4E7D5] p-8 transition-transform ${shake ? 'animate-shake' : ''}`}
-        style={{ backgroundColor: '#111111', backgroundImage: 'none' }}
+        className={`w-full max-w-sm border-2 border-neo-cream rounded-3xl shadow-[8px_8px_0px_var(--color-neo-cream)] p-8 transition-transform ${shake ? 'animate-shake' : ''}`}
+        style={{ backgroundColor: 'var(--color-neo-surface)', backgroundImage: 'none' }}
       >
         {/* Logo + title */}
         <div className="mb-10 text-center">
@@ -75,7 +75,7 @@ const Login = () => {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="e.g. Rajesh Kumar"
               className="w-full border-2 border-neo-cream/50 rounded-xl px-4 py-3 font-body text-sm text-neo-cream focus:outline-none focus:border-neo-cream transition-colors"
-              style={{ backgroundColor: '#010101', backgroundImage: 'none' }}
+              style={{ backgroundColor: 'var(--color-neo-dark)', backgroundImage: 'none' }}
               required
             />
           </div>
@@ -94,7 +94,7 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••"
                 className="w-full border-2 border-neo-cream/50 rounded-xl px-4 py-3 pr-12 font-body text-sm text-neo-cream focus:outline-none focus:border-neo-cream transition-colors"
-                style={{ backgroundColor: '#010101', backgroundImage: 'none' }}
+                style={{ backgroundColor: 'var(--color-neo-dark)', backgroundImage: 'none' }}
                 required
               />
               {/* Show/hide toggle */}
@@ -134,7 +134,7 @@ const Login = () => {
             id="login-submit"
             type="submit"
             disabled={loading}
-            className="w-full bg-neo-green-dark text-neo-cream border-2 border-neo-cream rounded-xl py-4 font-heading text-xl uppercase shadow-[4px_4px_0px_#F4E7D5] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[1px_1px_0px_#F4E7D5] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            className="w-full bg-neo-green-dark text-neo-cream border-2 border-neo-cream rounded-xl py-4 font-heading text-xl uppercase shadow-[4px_4px_0px_var(--color-neo-cream)] hover:translate-y-[3px] hover:translate-x-[3px] hover:shadow-[1px_1px_0px_var(--color-neo-cream)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             style={{ backgroundImage: 'none' }}
           >
             {loading ? (

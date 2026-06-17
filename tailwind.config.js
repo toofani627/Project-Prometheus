@@ -4,17 +4,18 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        'neo-cream':       '#F4E7D5',
-        'neo-warm-white':  '#FEF9F2',
-        'neo-black':       '#101010',
-        'neo-dark':        '#010101',
-        'neo-surface':     '#111111',
-        'neo-surface-2':   '#1a1a1a',
-        'neo-green-dark':  '#157A26',
-        'neo-green-light': '#E0F5DC',
+        'neo-cream':       'var(--color-neo-cream)',
+        'neo-warm-white':  'var(--color-neo-warm-white)',
+        'neo-black':       'var(--color-neo-black)',
+        'neo-dark':        'var(--color-neo-dark)',
+        'neo-surface':     'var(--color-neo-surface)',
+        'neo-surface-2':   'var(--color-neo-surface-2)',
+        'neo-green-dark':  'var(--color-neo-green-dark)',
+        'neo-green-light': 'var(--color-neo-green-light)',
       },
       fontFamily: {
         'heading':    ['var(--font-heading)'],
