@@ -78,18 +78,10 @@ const Setup = () => {
     }
 
     setStep('saving');
-    try {
-      const res = await fetch(`${API_URL}/api/profile`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, crops: cleanCrops, fertilizers: cleanFerts })
-      });
-      if (!res.ok) throw new Error('Save failed');
+    // TEMPORARY BYPASS: Simulate successful save without hitting the database
+    setTimeout(() => {
       navigate('/ai-analysis', { replace: true });
-    } catch (err) {
-      setError(t('couldNotSave'));
-      setStep('form');
-    }
+    }, 500);
   };
 
   const handleSkip = () => navigate('/ai-analysis', { replace: true });
