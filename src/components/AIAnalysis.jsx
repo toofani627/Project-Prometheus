@@ -1511,43 +1511,43 @@ const AIAnalysis = () => {
                 </p>
               </div>
               {/* Toggles */}
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 justify-end">
                 <button
                   id="profit-toggle"
                   onClick={() => setProfitMode(m => !m)}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 transition-all duration-200 flex-shrink-0 ${
-                    profitMode
-                      ? 'border-neo-green-dark bg-neo-green-dark/15 text-neo-green-light shadow-[0_0_12px_rgba(21,122,38,0.3)]'
-                      : 'border-neo-cream/20 text-neo-cream/50 hover:border-neo-cream/40'
-                  }`}
-                  style={{backgroundImage:'none', backgroundColor: profitMode ? 'rgba(21,122,38,0.12)' : 'transparent'}}
+                  className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all duration-200"
+                  style={{
+                    borderColor: 'var(--color-neo-cream)',
+                    backgroundColor: 'var(--color-neo-surface)',
+                    boxShadow: profitMode ? '0 0 15px rgba(var(--color-neo-cream-rgb),0.2)' : 'none'
+                  }}
                 >
-                  <div className={`w-11 h-6 rounded-full relative transition-all duration-200 flex-shrink-0 ${profitMode ? 'bg-neo-green-dark' : 'bg-neo-cream/15'}`}>
-                    <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-200 ${profitMode ? 'left-6 bg-neo-cream shadow-[0_0_6px_rgba(var(--color-neo-cream-rgb),0.8)]' : 'left-1 bg-neo-cream/40'}`}/>
+                  <div className={`w-12 h-6 rounded-full border-2 p-0.5 transition-all duration-200 ${profitMode ? 'border-neo-green-dark bg-neo-green-dark/20' : 'border-neo-cream/40 bg-transparent'}`}>
+                    <div className={`w-4 h-4 rounded-full transition-all duration-200 ${profitMode ? 'translate-x-6 bg-neo-green-light' : 'translate-x-0 bg-neo-cream'}`} />
                   </div>
-                  <span className="font-subheading text-[11px] uppercase tracking-widest whitespace-nowrap">
-                    EST. PROFIT
+                  <span className="font-subheading text-[12px] uppercase tracking-widest text-neo-cream font-bold">
+                    ESTIMATED PROFIT
                   </span>
                 </button>
+
                 {/* Companion planting toggle */}
-              <button
-                id="companion-toggle"
-                onClick={() => setCompanionMode(m => !m)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 transition-all duration-200 flex-shrink-0 ${
-                  companionMode
-                    ? 'border-neo-green-dark bg-neo-green-dark/15 text-neo-green-light shadow-[0_0_12px_rgba(21,122,38,0.3)]'
-                    : 'border-neo-cream/20 text-neo-cream/50 hover:border-neo-cream/40'
-                }`}
-                style={{backgroundImage:'none', backgroundColor: companionMode ? 'rgba(21,122,38,0.12)' : 'transparent'}}
-              >
-                {/* Hardware switch knob */}
-                <div className={`w-11 h-6 rounded-full relative transition-all duration-200 flex-shrink-0 ${companionMode ? 'bg-neo-green-dark' : 'bg-neo-cream/15'}`}>
-                  <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-200 ${companionMode ? 'left-6 bg-neo-cream shadow-[0_0_6px_rgba(var(--color-neo-cream-rgb),0.8)]' : 'left-1 bg-neo-cream/40'}`}/>
-                </div>
-                <span className="font-subheading text-[11px] uppercase tracking-widest whitespace-nowrap">
-                  {language === 'hi' ? 'साथी पौधारोपण' : language === 'ta' ? 'துணை நடவு' : 'COMPANION PLANTING'}
-                </span>
-              </button>
+                <button
+                  id="companion-toggle"
+                  onClick={() => setCompanionMode(m => !m)}
+                  className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all duration-200"
+                  style={{
+                    borderColor: 'var(--color-neo-cream)',
+                    backgroundColor: 'var(--color-neo-surface)',
+                    boxShadow: companionMode ? '0 0 15px rgba(var(--color-neo-cream-rgb),0.2)' : 'none'
+                  }}
+                >
+                  <div className={`w-12 h-6 rounded-full border-2 p-0.5 transition-all duration-200 ${companionMode ? 'border-neo-green-dark bg-neo-green-dark/20' : 'border-neo-cream/40 bg-transparent'}`}>
+                    <div className={`w-4 h-4 rounded-full transition-all duration-200 ${companionMode ? 'translate-x-6 bg-neo-green-light' : 'translate-x-0 bg-neo-cream'}`} />
+                  </div>
+                  <span className="font-subheading text-[12px] uppercase tracking-widest text-neo-cream font-bold">
+                    {language === 'hi' ? 'साथी पौधारोपण' : language === 'ta' ? 'துணை நடவு' : 'COMPANION PLANTING'}
+                  </span>
+                </button>
               </div>
             </div>
 
