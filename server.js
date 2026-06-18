@@ -67,7 +67,8 @@ const buildAgriSystemPrompt = (language) => {
 
 Your task is to analyze real soil moisture, synthesized soil chemistry (N/P/K, pH, EC), ${WEATHER_HISTORICAL_DAYS}-day weather history, ${WEATHER_FORECAST_DAYS}-day forecast, farm rotation history, and the farmer's current crop context.
 
-🚨 CRITICAL: YOU MUST RESPOND ONLY WITH A VALID JSON OBJECT. Do not wrap it in markdown codeblocks. Only return raw JSON. KEEP YOUR TEXT EXTREMELY CONCISE to ensure fast processing!
+🚨 CRITICAL: YOU MUST RESPOND ONLY WITH A VALID JSON OBJECT. Do not wrap it in markdown codeblocks. Only return raw JSON.
+🚨 PERFORMANCE CRITICAL: KEEP ALL TEXT RESPONSES UNDER 15 WORDS. RESPOND AS FAST AS POSSIBLE! THIS IS FOR A LIVE DEMO!
 
 ${isHindi ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO HINDI (हिन्दी). The JSON keys must remain in English.` : isTamil ? `🚨 CRITICAL INSTRUCTION: All text VALUES in the JSON MUST BE TRANSLATED TO TAMIL (தமிழ்). The JSON keys must remain in English. Keep Tamil translations short and direct.` : `All text values must be in English.`}
 
@@ -308,6 +309,7 @@ const buildCompanionSystemPrompt = (language) => {
   return `You are an advanced Agricultural Companion Planting Assistant.
 Your task is to recommend the best companion crop to plant alongside the farmer's current crop during its specific growth stage.
 You must analyze the crop and its growth stage to provide a scientifically sound, beneficial companion planting recommendation.
+🚨 PERFORMANCE CRITICAL: KEEP YOUR REASON UNDER 10 WORDS. RESPOND EXTREMELY FAST! THIS IS FOR A LIVE DEMO!
 
 🚨 CRITICAL: YOU MUST RESPOND ONLY WITH A VALID JSON OBJECT containing EXACTLY these four keys. Do not wrap it in markdown codeblocks. Only return raw JSON. KEEP YOUR RESPONSE EXTREMELY SHORT AND CONCISE (Under 20 words per reason/benefit).
 
@@ -681,7 +683,7 @@ app.post("/api/profile", async (req, res) => {
 });
 // ──────────────────────────────────────────────────────────────────────────────
 
-const callAgritechModel = async (messages) => {
+const callAgritechModel = async (messages, maxTokens = 500) => {
   if (!azureAiEndpoint || !azureAiKey) {
     console.warn("⚠️ Azure AI service is not configured (keys missing). Using mock AI response for testing.");
     // Simulate network delay
@@ -742,8 +744,8 @@ Your pH is 6.5, which is perfectly balanced for nutrient absorption. No amendmen
       },
       body: JSON.stringify({
         messages,
-        temperature: 0.3,
-        max_tokens: 1500
+        temperature: 0.2,
+        max_tokens: maxTokens
       }),
       signal: controller.signal
     });
@@ -926,7 +928,7 @@ app.post("/api/ai/analyze", async (req, res) => {
       });
       
       console.log('Sending companion request to AI model...');
-      const aiResult = await callAgritechModel(messages);
+      const aiResult = await callAgritechModel(messages, 250);
       
       console.log(`AI Response received (length: ${aiResult.text?.length || 0} chars)`);
       
@@ -1034,7 +1036,7 @@ app.post("/api/ai/analyze", async (req, res) => {
     console.log(`System Prompt Preview: ${messages[0].content.substring(0, 150)}...`);
     console.log(`User Prompt Preview: ${messages[1].content.substring(0, 150)}...`);
 
-    const aiResult = await callAgritechModel(messages);
+    const aiResult = await callAgritechModel(messages, 500);
     
     console.log(`AI Response received (length: ${aiResult.text?.length || 0} chars)`);
     console.log(`Preview: ${aiResult.text?.substring(0, 100)}...`);
