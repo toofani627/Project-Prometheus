@@ -683,7 +683,7 @@ app.post("/api/profile", async (req, res) => {
 });
 // ──────────────────────────────────────────────────────────────────────────────
 
-const callAgritechModel = async (messages, maxTokens = 500) => {
+const callAgritechModel = async (messages, maxTokens = 1500) => {
   const userMessage = messages[messages.length - 1]?.content || '';
   const isMultiCrop = typeof userMessage === 'string' && (userMessage.includes('companion') || userMessage.includes('multi-crop'));
 
@@ -950,7 +950,7 @@ app.post("/api/ai/analyze", async (req, res) => {
       });
       
       console.log('Sending companion request to AI model...');
-      const aiResult = await callAgritechModel(messages, 250);
+      const aiResult = await callAgritechModel(messages);
       
       console.log(`AI Response received (length: ${aiResult.text?.length || 0} chars)`);
       
@@ -1058,7 +1058,7 @@ app.post("/api/ai/analyze", async (req, res) => {
     console.log(`System Prompt Preview: ${messages[0].content.substring(0, 150)}...`);
     console.log(`User Prompt Preview: ${messages[1].content.substring(0, 150)}...`);
 
-    const aiResult = await callAgritechModel(messages, 500);
+    const aiResult = await callAgritechModel(messages);
     
     console.log(`AI Response received (length: ${aiResult.text?.length || 0} chars)`);
     console.log(`Preview: ${aiResult.text?.substring(0, 100)}...`);
