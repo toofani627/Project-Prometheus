@@ -731,9 +731,9 @@ Your pH is 6.5, which is perfectly balanced for nutrient absorption. No amendmen
   console.log('Calling Azure AI model...');
   console.log(`Request: ${messages.length} messages, user prompt length: ${messages[messages.length-1]?.content?.length || 0}`);
 
-  // Add 8-second timeout to prevent hanging requests during live demo
+  // Generous 60-second timeout to allow the real AI to finish processing
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
 
   try {
     const response = await fetch(url, {
@@ -785,7 +785,7 @@ Your pH is 6.5, which is perfectly balanced for nutrient absorption. No amendmen
   } catch (error) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
-      console.warn("⚠️ Azure AI request timed out after 8 seconds! Returning mock response to save the demo.");
+      console.warn("⚠️ Azure AI request timed out after 60 seconds! Returning mock response to save the demo.");
       return {
         text: mockResponseText,
         raw: { mocked: true }
