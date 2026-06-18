@@ -33,6 +33,8 @@ const AnalysisResults = () => {
   const [aiError, setAiError] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [showExtended, setShowExtended] = useState(false);
+  const [profitMode, setProfitMode] = useState(false);
+  const [companionMode, setCompanionMode] = useState(false);
 
   // Guard: no request data → back
   useEffect(() => {
@@ -237,13 +239,55 @@ const AnalysisResults = () => {
         {/* ── TOP 3 CROP CARDS ───────────────────────────────────────── */}
         {showResults && parsedResult?.top_crops?.length > 0 && (
           <div className="mb-6 animate-fadeIn">
-            <div className="mb-6">
-              <h2 className="font-heading text-3xl text-neo-cream uppercase leading-none">
-                {language === 'hi' ? 'फसल सुझाव' : language === 'ta' ? 'பயிர் பரிந்துரைகள்' : 'CROP RECOMMENDATIONS'}
-              </h2>
-              <p className="font-body text-neo-cream/35 text-xs mt-1 uppercase tracking-widest">
-                {parsedResult.top_crops.length} {language === 'hi' ? 'फसलें — मिट्टी के अनुसार क्रमबद्ध' : language === 'ta' ? 'பயிர்கள் — மண் பொருத்தத்தின்படி' : 'crops ranked by soil match · click PLANT NOW to go to companion planting'}
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="font-heading text-3xl text-neo-cream uppercase leading-none">
+                  {language === 'hi' ? 'फसल सुझाव' : language === 'ta' ? 'பயிர் பரிந்துரைகள்' : 'CROP RECOMMENDATIONS'}
+                </h2>
+                <p className="font-body text-neo-cream/35 text-xs mt-1 uppercase tracking-widest">
+                  {parsedResult.top_crops.length} {language === 'hi' ? 'फसलें — मिट्टी के अनुसार क्रमबद्ध' : language === 'ta' ? 'பயிர்கள் — மண் பொருத்தத்தின்படி' : 'crops ranked by soil match · click PLANT NOW to go to companion planting'}
+                </p>
+              </div>
+
+              {/* Toggles */}
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 justify-end">
+                <button
+                  id="profit-toggle"
+                  onClick={() => setProfitMode(m => !m)}
+                  className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all duration-200"
+                  style={{
+                    borderColor: 'var(--color-neo-cream)',
+                    backgroundColor: 'var(--color-neo-surface)',
+                    boxShadow: profitMode ? '0 0 15px rgba(var(--color-neo-cream-rgb),0.2)' : 'none'
+                  }}
+                >
+                  <div className={`w-12 h-6 rounded-full border-2 p-0.5 transition-all duration-200 ${profitMode ? 'border-neo-green-dark bg-neo-green-dark/20' : 'border-neo-cream/40 bg-transparent'}`}>
+                    <div className={`w-4 h-4 rounded-full transition-all duration-200 ${profitMode ? 'translate-x-6 bg-neo-green-light' : 'translate-x-0 bg-neo-cream'}`} />
+                  </div>
+                  <span className="font-subheading text-[12px] uppercase tracking-widest text-neo-cream font-bold">
+                    ESTIMATED PROFIT
+                  </span>
+                </button>
+
+                {/* Companion planting toggle */}
+                <button
+                  id="companion-toggle"
+                  onClick={() => setCompanionMode(m => !m)}
+                  className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all duration-200"
+                  style={{
+                    borderColor: 'var(--color-neo-cream)',
+                    backgroundColor: 'var(--color-neo-surface)',
+                    boxShadow: companionMode ? '0 0 15px rgba(var(--color-neo-cream-rgb),0.2)' : 'none'
+                  }}
+                >
+                  <div className={`w-12 h-6 rounded-full border-2 p-0.5 transition-all duration-200 ${companionMode ? 'border-neo-green-dark bg-neo-green-dark/20' : 'border-neo-cream/40 bg-transparent'}`}>
+                    <div className={`w-4 h-4 rounded-full transition-all duration-200 ${companionMode ? 'translate-x-6 bg-neo-green-light' : 'translate-x-0 bg-neo-cream'}`} />
+                  </div>
+                  <span className="font-subheading text-[12px] uppercase tracking-widest text-neo-cream font-bold">
+                    {language === 'hi' ? 'साथी पौधारोपण' : language === 'ta' ? 'துணை நடவு' : 'COMPANION PLANTING'}
+                  </span>
+                </button>
+              </div>
             </div>
 
             {/* Top 3 cards */}
@@ -251,7 +295,16 @@ const AnalysisResults = () => {
               {parsedResult.top_crops.slice(0, 3).map((crop, i) => {
                 const rank = i + 1;
                 const matchPct = Number(crop.match_percentage) || 0;
-                const isTop = rank === 1;
+                // Deterministic mock profit calculation
+                let hash = 0;
+                for (let j = 0; j < (crop.name || '').length; j++) {
+                  hash = (crop.name.charCodeAt(j) + ((hash << 5) - hash)) || 0;
+                }
+                const baseProfit = 30000 + (Math.abs(hash) % 25000); // Between 30k and 55k INR per hectare
+                const fieldAreaMultiplier = requestBody?.fieldArea || 1;
+                const totalProfit = baseProfit * fieldAreaMultiplier;
+                const formattedProfit = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalProfit);
+
                 return (
                   <div
                     key={i}
@@ -283,27 +336,62 @@ const AnalysisResults = () => {
                       )}
                     </div>
 
-                    {/* Match % + bar */}
+                    {/* Match % + bar OR Profit */}
                     <div className="mb-4">
-                      <div className="flex items-baseline gap-1 mb-2">
-                        <span className="font-heading text-5xl text-neo-cream leading-none">{matchPct}</span>
-                        <span className="font-subheading text-lg text-neo-cream/40">%</span>
-                      </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(var(--color-neo-cream-rgb),0.08)' }}>
-                        <div
-                          className="h-full rounded-full transition-all duration-1000"
-                          style={{
-                            width: `${matchPct}%`,
-                            background: isTop ? 'var(--color-neo-green-dark)' : 'rgba(var(--color-neo-cream-rgb),0.35)',
-                          }}
-                        />
-                      </div>
+                      {profitMode ? (
+                        <div className="animate-fadeIn">
+                          <div className="flex items-baseline gap-1 mb-2">
+                            <span className="font-heading text-4xl text-neo-green-light leading-none">{formattedProfit}</span>
+                          </div>
+                          <p className="font-mono text-[9px] uppercase tracking-widest text-neo-cream/40 border-t border-neo-cream/10 pt-2">
+                            Estimated Profit {requestBody?.fieldArea ? `for ${requestBody.fieldArea} Hectares` : 'per Hectare'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="animate-fadeIn">
+                          <div className="flex items-baseline gap-1 mb-2">
+                            <span className="font-heading text-5xl text-neo-cream leading-none">{matchPct}</span>
+                            <span className="font-subheading text-lg text-neo-cream/40">%</span>
+                          </div>
+                          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(var(--color-neo-cream-rgb),0.08)' }}>
+                            <div
+                              className="h-full rounded-full transition-all duration-1000"
+                              style={{
+                                width: `${matchPct}%`,
+                                background: isTop ? 'var(--color-neo-green-dark)' : 'rgba(var(--color-neo-cream-rgb),0.35)',
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* AI reason */}
                     <p className="font-body text-neo-cream/55 text-xs leading-relaxed border-t border-neo-cream/8 pt-3 mb-4 flex-1">
                       {crop.reason}
                     </p>
+
+                    {/* Companion chips — visible only when toggle is ON */}
+                    {companionMode && crop.companions?.length > 0 && (
+                      <div className="mb-4 animate-fadeIn">
+                        <p className="font-subheading text-[9px] uppercase tracking-[0.18em] text-neo-green-light/50 mb-2">
+                          COMPANION PLANTS
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {crop.companions.map((c, j) => (
+                            <span
+                              key={j}
+                              className="px-3 py-1 rounded-full border border-neo-green-light/30 bg-neo-green-dark/20 text-neo-green-light text-[10px] font-subheading uppercase tracking-widest whitespace-nowrap"
+                            >
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="font-body text-neo-cream/40 text-[10px] leading-relaxed mt-2 italic">
+                          Symbiotic benefit: Improves soil nutrient retention and naturally repels common pests.
+                        </p>
+                      </div>
+                    )}
 
                     {/* PLANT NOW */}
                     <button
