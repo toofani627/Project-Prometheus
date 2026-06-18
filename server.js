@@ -684,16 +684,11 @@ app.post("/api/profile", async (req, res) => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 const callAgritechModel = async (messages, maxTokens = 500) => {
-  if (!azureAiEndpoint || !azureAiKey) {
-    console.warn("⚠️ Azure AI service is not configured (keys missing). Using mock AI response for testing.");
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const userMessage = messages[messages.length - 1]?.content || '';
-    const isMultiCrop = typeof userMessage === 'string' && (userMessage.includes('companion') || userMessage.includes('multi-crop'));
+  const userMessage = messages[messages.length - 1]?.content || '';
+  const isMultiCrop = typeof userMessage === 'string' && (userMessage.includes('companion') || userMessage.includes('multi-crop'));
 
-    const mockResponseText = isMultiCrop 
-      ? `Based on your selected crop and field conditions, here are some highly recommended companion crops:
+  const mockResponseText = isMultiCrop 
+    ? `Based on your selected crop and field conditions, here are some highly recommended companion crops:
 
 **1. Legumes (Beans/Peas)**
 They act as natural nitrogen fixers, pulling nitrogen from the air and enriching the soil for your primary crop.
@@ -702,7 +697,7 @@ They act as natural nitrogen fixers, pulling nitrogen from the air and enriching
 An excellent natural pest repellent that protects root systems from harmful nematodes.
 
 **Planting Strategy:** Plant your primary crop in standard rows and intersperse legumes in the pathways. Use marigolds around the perimeter of the field.`
-      : `### Soil Analysis & Recommendations
+    : `### Soil Analysis & Recommendations
 
 Based on the latest sensor readings and your specified crop stage, the field conditions are generally stable, but we detect a slight imbalance.
 
@@ -715,6 +710,11 @@ Soil moisture is at a healthy 68%. Hold off on additional watering unless temper
 **3. pH Management**
 Your pH is 6.5, which is perfectly balanced for nutrient absorption. No amendments needed.`;
 
+  if (!azureAiEndpoint || !azureAiKey) {
+    console.warn("⚠️ Azure AI service is not configured (keys missing). Using mock AI response for testing.");
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     return {
       text: mockResponseText,
       raw: { mocked: true }
