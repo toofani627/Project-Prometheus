@@ -76,12 +76,19 @@ const Setup = () => {
       setError(t('pleaseEnterCrop'));
       return;
     }
-
     setStep('saving');
-    // TEMPORARY BYPASS: Simulate successful save without hitting the database
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${API_URL}/api/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, crops: cleanCrops, fertilizers: cleanFerts })
+      });
+      if (!res.ok) throw new Error('Save failed');
       navigate('/ai-analysis', { replace: true });
-    }, 500);
+    } catch (err) {
+      setError(t('couldNotSave'));
+      setStep('form');
+    }
   };
 
   const handleSkip = () => navigate('/ai-analysis', { replace: true });
