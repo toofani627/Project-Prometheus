@@ -697,18 +697,30 @@ They act as natural nitrogen fixers, pulling nitrogen from the air and enriching
 An excellent natural pest repellent that protects root systems from harmful nematodes.
 
 **Planting Strategy:** Plant your primary crop in standard rows and intersperse legumes in the pathways. Use marigolds around the perimeter of the field.`
-    : `### Soil Analysis & Recommendations
-
-Based on the latest sensor readings and your specified crop stage, the field conditions are generally stable, but we detect a slight imbalance.
-
-**1. Nutrient Adjustment**
-Nitrogen levels are currently in the lower bound of the optimal range. We recommend applying a light top-dressing of nitrogen fertilizer (approx 15kg/hectare) in the next 3-4 days.
-
-**2. Irrigation Planning**
-Soil moisture is at a healthy 68%. Hold off on additional watering unless temperatures exceed 35°C in the next 48 hours.
-
-**3. pH Management**
-Your pH is 6.5, which is perfectly balanced for nutrient absorption. No amendments needed.`;
+    : `{
+  "soil_score": 85,
+  "soil_summary": "Based on the latest sensor readings and your specified crop stage, the field conditions are generally stable, but we detect a slight imbalance in nitrogen.",
+  "top_crops": [
+    {
+      "name": "Tomatoes",
+      "match_percentage": 92,
+      "reason": "Optimal pH and temperature match for vegetative growth stage.",
+      "companions": ["Marigolds", "Basil"]
+    },
+    {
+      "name": "Peppers",
+      "match_percentage": 88,
+      "reason": "Good match for current soil moisture and NPK profile.",
+      "companions": ["Onions", "Carrots"]
+    },
+    {
+      "name": "Beans",
+      "match_percentage": 85,
+      "reason": "Excellent choice to naturally fix nitrogen deficiencies.",
+      "companions": ["Corn", "Squash"]
+    }
+  ]
+}`;
 
   if (!azureAiEndpoint || !azureAiKey) {
     console.warn("⚠️ Azure AI service is not configured (keys missing). Using mock AI response for testing.");
