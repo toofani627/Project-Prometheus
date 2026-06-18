@@ -125,25 +125,68 @@ const AnalysisResults = () => {
       <div className="container mx-auto px-3 sm:px-4 md:px-6 py-6 sm:py-8 max-w-5xl">
 
         {/* ── BACK + HEADER ──────────────────────────────────────────── */}
-        <div className="flex items-center gap-4 mb-8 border-b border-neo-cream/20 pb-6">
-          <button
-            onClick={() => navigate('/ai-analysis')}
-            className="flex items-center gap-2 text-neo-cream/50 hover:text-neo-cream transition-colors font-subheading text-xs uppercase tracking-widest"
-            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 5l-7 7 7 7"/>
-            </svg>
-            {language === 'hi' ? 'वापस' : language === 'ta' ? 'திரும்பு' : 'BACK'}
-          </button>
-          <div>
-            <h1 className="font-heading text-3xl sm:text-4xl text-neo-cream uppercase leading-none">
-              {language === 'hi' ? 'AI विश्लेषण परिणाम' : language === 'ta' ? 'AI பகுப்பாய்வு முடிவுகள்' : 'AI ANALYSIS RESULTS'}
-            </h1>
-            <p className="font-body text-neo-cream/40 text-xs mt-1 uppercase tracking-widest">
-              {language === 'hi' ? 'डिवाइस:' : 'DEVICE:'} {deviceId}
-            </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-neo-cream/20 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <button
+              onClick={() => navigate('/ai-analysis')}
+              className="flex items-center gap-2 text-neo-cream/50 hover:text-neo-cream transition-colors font-subheading text-xs uppercase tracking-widest shrink-0"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+              </svg>
+              {language === 'hi' ? 'वापस' : language === 'ta' ? 'திரும்பு' : 'BACK'}
+            </button>
+            <div>
+              <h1 className="font-heading text-3xl sm:text-4xl text-neo-cream uppercase leading-none">
+                {language === 'hi' ? 'फसल सुझाव' : language === 'ta' ? 'பயிர் பரிந்துரைகள்' : 'CROP RECOMMENDATIONS'}
+              </h1>
+              <p className="font-body text-neo-cream/40 text-xs mt-1 uppercase tracking-widest">
+                {showResults && parsedResult?.top_crops ? `${parsedResult.top_crops.length} ${language === 'hi' ? 'फसलें — मिट्टी के अनुसार क्रमबद्ध' : language === 'ta' ? 'பயிர்கள் — மண் பொருத்தத்தின்படி' : 'crops ranked by soil match · click PLANT NOW to go to companion planting'}` : `${language === 'hi' ? 'डिवाइस:' : 'DEVICE:'} ${deviceId}`}
+              </p>
+            </div>
           </div>
+
+          {/* Toggles */}
+          {showResults && parsedResult?.top_crops?.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0">
+              <button
+                id="profit-toggle"
+                onClick={() => setProfitMode(m => !m)}
+                className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all duration-200"
+                style={{
+                  borderColor: 'var(--color-neo-cream)',
+                  backgroundColor: 'var(--color-neo-surface)',
+                  boxShadow: profitMode ? '0 0 15px rgba(var(--color-neo-cream-rgb),0.2)' : 'none'
+                }}
+              >
+                <div className={`w-12 h-6 shrink-0 rounded-full border-2 transition-all duration-200 flex items-center relative ${profitMode ? 'border-neo-green-dark bg-neo-green-dark/20' : 'border-neo-cream/40 bg-transparent'}`}>
+                  <div className={`w-4 h-4 rounded-full transition-all duration-200 absolute left-0.5 ${profitMode ? 'translate-x-[24px] bg-neo-green-light' : 'translate-x-0 bg-neo-cream'}`} />
+                </div>
+                <span className="font-subheading text-[12px] uppercase tracking-widest text-neo-cream font-bold whitespace-nowrap">
+                  ESTIMATED PROFIT
+                </span>
+              </button>
+
+              <button
+                id="companion-toggle"
+                onClick={() => setCompanionMode(m => !m)}
+                className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all duration-200"
+                style={{
+                  borderColor: 'var(--color-neo-cream)',
+                  backgroundColor: 'var(--color-neo-surface)',
+                  boxShadow: companionMode ? '0 0 15px rgba(var(--color-neo-cream-rgb),0.2)' : 'none'
+                }}
+              >
+                <div className={`w-12 h-6 shrink-0 rounded-full border-2 transition-all duration-200 flex items-center relative ${companionMode ? 'border-neo-green-dark bg-neo-green-dark/20' : 'border-neo-cream/40 bg-transparent'}`}>
+                  <div className={`w-4 h-4 rounded-full transition-all duration-200 absolute left-0.5 ${companionMode ? 'translate-x-[24px] bg-neo-green-light' : 'translate-x-0 bg-neo-cream'}`} />
+                </div>
+                <span className="font-subheading text-[12px] uppercase tracking-widest text-neo-cream font-bold whitespace-nowrap">
+                  {language === 'hi' ? 'साथी पौधारोपण' : language === 'ta' ? 'துணை நடவு' : 'COMPANION PLANTING'}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── TERMINAL ───────────────────────────────────────────────── */}
@@ -236,67 +279,9 @@ const AnalysisResults = () => {
           </div>
         )}
 
-        {/* ── AI RECOMMENDATION BOX ────────────────────────────────────── */}
-        {showResults && parsedResult && parsedResult.soil_summary && (
-          <div className="neo-card border-2 border-neo-cream rounded-2xl p-6 mb-6 animate-fadeIn">
-            <h3 className="font-heading text-xl text-neo-cream uppercase mb-3">AI RECOMMENDATION</h3>
-            <p className="font-body text-neo-cream/70 text-sm leading-relaxed whitespace-pre-wrap">{parsedResult.soil_summary}</p>
-          </div>
-        )}
-
         {/* ── TOP 3 CROP CARDS ───────────────────────────────────────── */}
         {showResults && parsedResult?.top_crops?.length > 0 && (
           <div className="mb-6 animate-fadeIn">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <div>
-                <h2 className="font-heading text-3xl text-neo-cream uppercase leading-none">
-                  {language === 'hi' ? 'फसल सुझाव' : language === 'ta' ? 'பயிர் பரிந்துரைகள்' : 'CROP RECOMMENDATIONS'}
-                </h2>
-                <p className="font-body text-neo-cream/35 text-xs mt-1 uppercase tracking-widest">
-                  {parsedResult.top_crops.length} {language === 'hi' ? 'फसलें — मिट्टी के अनुसार क्रमबद्ध' : language === 'ta' ? 'பயிர்கள் — மண் பொருத்தத்தின்படி' : 'crops ranked by soil match · click PLANT NOW to go to companion planting'}
-                </p>
-              </div>
-
-              {/* Toggles */}
-              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 justify-end">
-                <button
-                  id="profit-toggle"
-                  onClick={() => setProfitMode(m => !m)}
-                  className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all duration-200"
-                  style={{
-                    borderColor: 'var(--color-neo-cream)',
-                    backgroundColor: 'var(--color-neo-surface)',
-                    boxShadow: profitMode ? '0 0 15px rgba(var(--color-neo-cream-rgb),0.2)' : 'none'
-                  }}
-                >
-                  <div className={`w-12 h-6 rounded-full border-2 p-0.5 transition-all duration-200 ${profitMode ? 'border-neo-green-dark bg-neo-green-dark/20' : 'border-neo-cream/40 bg-transparent'}`}>
-                    <div className={`w-4 h-4 rounded-full transition-all duration-200 ${profitMode ? 'translate-x-6 bg-neo-green-light' : 'translate-x-0 bg-neo-cream'}`} />
-                  </div>
-                  <span className="font-subheading text-[12px] uppercase tracking-widest text-neo-cream font-bold">
-                    ESTIMATED PROFIT
-                  </span>
-                </button>
-
-                {/* Companion planting toggle */}
-                <button
-                  id="companion-toggle"
-                  onClick={() => setCompanionMode(m => !m)}
-                  className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all duration-200"
-                  style={{
-                    borderColor: 'var(--color-neo-cream)',
-                    backgroundColor: 'var(--color-neo-surface)',
-                    boxShadow: companionMode ? '0 0 15px rgba(var(--color-neo-cream-rgb),0.2)' : 'none'
-                  }}
-                >
-                  <div className={`w-12 h-6 rounded-full border-2 p-0.5 transition-all duration-200 ${companionMode ? 'border-neo-green-dark bg-neo-green-dark/20' : 'border-neo-cream/40 bg-transparent'}`}>
-                    <div className={`w-4 h-4 rounded-full transition-all duration-200 ${companionMode ? 'translate-x-6 bg-neo-green-light' : 'translate-x-0 bg-neo-cream'}`} />
-                  </div>
-                  <span className="font-subheading text-[12px] uppercase tracking-widest text-neo-cream font-bold">
-                    {language === 'hi' ? 'साथी पौधारोपण' : language === 'ta' ? 'துணை நடவு' : 'COMPANION PLANTING'}
-                  </span>
-                </button>
-              </div>
-            </div>
 
             {/* Top 3 cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -537,6 +522,11 @@ const AnalysisResults = () => {
               <span className="font-mono text-[9px] text-neo-cream/20 uppercase">Good</span>
               <span className="font-mono text-[9px] text-neo-cream/20 uppercase">100</span>
             </div>
+            {parsedResult.soil_summary && (
+              <p className="font-body text-neo-cream/60 text-sm leading-relaxed border-t border-neo-cream/10 pt-4">
+                {parsedResult.soil_summary}
+              </p>
+            )}
           </div>
         )}
 
