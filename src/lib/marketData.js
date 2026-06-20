@@ -100,5 +100,60 @@ export const marketData = [
       { rank: 4, state: 'Karnataka', production: 0.4 },
       { rank: 5, state: 'Telangana', production: 0.3 }
     ]
+  },
+  {
+    crop: 'Jute',
+    unit: 'Million Bales (180kg)',
+    rankings: [
+      { rank: 1, state: 'West Bengal', production: 7.2 },
+      { rank: 2, state: 'Bihar', production: 1.1 },
+      { rank: 3, state: 'Assam', production: 0.8 },
+      { rank: 4, state: 'Odisha', production: 0.1 },
+      { rank: 5, state: 'Meghalaya', production: 0.08 }
+    ]
+  },
+  {
+    crop: 'Onion',
+    unit: 'Million Tonnes',
+    rankings: [
+      { rank: 1, state: 'Maharashtra', production: 10.5 },
+      { rank: 2, state: 'Madhya Pradesh', production: 4.6 },
+      { rank: 3, state: 'Karnataka', production: 2.8 },
+      { rank: 4, state: 'Gujarat', production: 2.5 },
+      { rank: 5, state: 'Rajasthan', production: 1.2 }
+    ]
+  },
+  {
+    crop: 'Potato',
+    unit: 'Million Tonnes',
+    rankings: [
+      { rank: 1, state: 'Uttar Pradesh', production: 16.2 },
+      { rank: 2, state: 'West Bengal', production: 12.8 },
+      { rank: 3, state: 'Bihar', production: 9.1 },
+      { rank: 4, state: 'Gujarat', production: 4.2 },
+      { rank: 5, state: 'Madhya Pradesh', production: 3.5 }
+    ]
+  },
+  {
+    crop: 'Bajra',
+    unit: 'Million Tonnes',
+    rankings: [
+      { rank: 1, state: 'Rajasthan', production: 4.6 },
+      { rank: 2, state: 'Uttar Pradesh', production: 2.1 },
+      { rank: 3, state: 'Haryana', production: 1.2 },
+      { rank: 4, state: 'Gujarat', production: 1.1 },
+      { rank: 5, state: 'Madhya Pradesh', production: 0.8 }
+    ]
+  },
+  {
+    crop: 'Rubber',
+    unit: 'Thousand Tonnes',
+    rankings: [
+      { rank: 1, state: 'Kerala', production: 602.5 },
+      { rank: 2, state: 'Tripura', production: 92.4 },
+      { rank: 3, state: 'Karnataka', production: 41.2 },
+      { rank: 4, state: 'Tamil Nadu', production: 25.8 },
+      { rank: 5, state: 'Assam', production: 21.1 }
+    ]
   }
 ];

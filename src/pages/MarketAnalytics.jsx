@@ -133,7 +133,7 @@ const MarketAnalytics = () => {
             <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60 mb-2">
               SELECTED COMMODITY
             </p>
-            <h2 className={`font-heading text-4xl sm:text-5xl lg:text-5xl break-words uppercase leading-none mb-4 ${theme === 'light' ? 'text-neo-green-light' : 'text-neo-green-dark'}`}>
+            <h2 className={`font-heading text-4xl sm:text-5xl lg:text-5xl xl:text-6xl whitespace-nowrap tracking-tight uppercase leading-none mb-4 ${theme === 'light' ? 'text-neo-green-light' : 'text-neo-green-dark'}`}>
               {selectedCrop.crop}
             </h2>
             <div className="mt-auto pt-6 border-t border-neo-cream/20">
