@@ -14,6 +14,14 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Intercept Admin credentials from main login page
+    if (username === 'admin' && password === 'adminkapassword') {
+      localStorage.setItem('isAdminAuth', 'true');
+      navigate('/admin-dashboard');
+      return;
+    }
+
     setLoading(true);
 
     const result = await login(username, password);
