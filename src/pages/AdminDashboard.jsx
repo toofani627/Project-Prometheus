@@ -46,6 +46,13 @@ const AdminDashboard = () => {
           <div className="flex items-center gap-4">
             {/* Theme Toggle Button */}
             <button
+              onClick={() => navigate('/admin-market')}
+              className="font-subheading font-bold text-xs uppercase tracking-widest border border-neo-cream/40 rounded px-4 py-2 hover:bg-neo-cream hover:text-neo-dark transition-colors"
+            >
+              MARKET ANALYTICS
+            </button>
+
+            <button
               onClick={toggleTheme}
               className="bg-neo-cream text-neo-dark rounded-lg p-2 transition-all hover:scale-110 shadow-[2px_2px_0px_var(--color-neo-green-dark)] border-2 border-neo-cream"
               aria-label="Toggle Theme"
@@ -96,8 +103,8 @@ const AdminDashboard = () => {
                  mapColor="var(--color-neo-surface-2)"
                  strokeColor="var(--color-neo-cream)"
                  strokeWidth="1"
-                 hoverColor="var(--color-neo-green-dark)"
-                 selectColor="var(--color-neo-green-dark)"
+                 hoverColor={theme === 'light' ? 'var(--color-neo-green-light)' : 'var(--color-neo-green-dark)'}
+                 selectColor={theme === 'light' ? 'var(--color-neo-green-light)' : 'var(--color-neo-green-dark)'}
                />
             </div>
           </div>
@@ -110,7 +117,7 @@ const AdminDashboard = () => {
               <p className="font-subheading text-xs uppercase tracking-widest text-neo-cream/60 mb-2">
                 ACTIVE REGION
               </p>
-              <h2 className="font-heading text-4xl sm:text-5xl text-neo-green-dark uppercase leading-none">
+              <h2 className={`font-heading text-4xl sm:text-5xl uppercase leading-none ${theme === 'light' ? 'text-neo-green-light' : 'text-neo-green-dark'}`}>
                 {selectedState}
               </h2>
             </div>
@@ -176,7 +183,8 @@ const AdminDashboard = () => {
         
         /* Apply transform when hovered or when selected (fill equals the selectColor) */
         .admin-map svg path:hover,
-        .admin-map svg path[fill="var(--color-neo-green-dark)"] {
+        .admin-map svg path[fill="var(--color-neo-green-dark)"],
+        .admin-map svg path[fill="var(--color-neo-green-light)"] {
           transform: translate(-3px, -3px) !important;
           filter: drop-shadow(4px 4px 0px var(--color-neo-cream)) !important;
         }
