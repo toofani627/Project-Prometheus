@@ -12,14 +12,18 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@react-map/india": "^1.0.21",
     "cors": "^2.8.6",
+    "d3-scale": "^4.0.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "lucide-react": "^1.21.0",
     "mongoose": "^9.7.0",
     "node-fetch": "^3.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0",
+    "react-simple-maps": "^3.0.0",
     "ws": "^8.14.2"
   },
   "devDependencies": {
