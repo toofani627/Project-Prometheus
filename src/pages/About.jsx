@@ -55,30 +55,79 @@ const About = () => {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
           }
+          @keyframes bus-marquee-rev {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0); }
+          }
           .animate-bus {
             display: inline-block;
             white-space: nowrap;
             animation: bus-marquee 25s linear infinite;
           }
+          .animate-bus-rev {
+            display: inline-block;
+            white-space: nowrap;
+            animation: bus-marquee-rev 18s linear infinite;
+          }
+          .animate-bus-sub {
+            display: inline-block;
+            white-space: nowrap;
+            animation: bus-marquee 18s linear infinite;
+          }
         `}</style>
 
-        {/* Massive Typographic Geometry - Bus Marquee */}
-        <div className="absolute inset-0 flex items-center">
-          <div className="animate-bus">
-            {[...Array(6)].map((_, i) => (
-              <span 
-                key={i}
-                className="font-heading leading-none tracking-tighter pr-16 sm:pr-32"
-                style={{ 
-                  color: blackText, 
-                  fontSize: 'min(60vw, 600px)',
-                  textShadow: `8px 8px 0 ${whiteText}20` 
-                }}
-              >
-                PMT
-              </span>
-            ))}
+        {/* Outer flex column: sub · PMT · sub */}
+        <div className="absolute inset-0 flex flex-col justify-center gap-0">
+
+          {/* ── TOP sub-marquee [pmt · prometheus] ── */}
+          <div className="overflow-hidden w-full" style={{ opacity: 0.55 }}>
+            <div className="animate-bus-rev">
+              {[...Array(12)].map((_, i) => (
+                <span
+                  key={i}
+                  className="font-subheading text-sm sm:text-lg uppercase tracking-[0.4em] pr-10"
+                  style={{ color: blackText }}
+                >
+                  [pmt · prometheus]
+                </span>
+              ))}
+            </div>
           </div>
+
+          {/* ── MAIN PMT marquee ── */}
+          <div className="overflow-hidden w-full">
+            <div className="animate-bus">
+              {[...Array(6)].map((_, i) => (
+                <span
+                  key={i}
+                  className="font-heading leading-none tracking-tighter pr-16 sm:pr-32"
+                  style={{
+                    color: blackText,
+                    fontSize: 'min(60vw, 600px)',
+                    textShadow: `8px 8px 0 ${whiteText}20`
+                  }}
+                >
+                  PMT
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* ── BOTTOM sub-marquee [pmt · prometheus] ── */}
+          <div className="overflow-hidden w-full" style={{ opacity: 0.55 }}>
+            <div className="animate-bus-sub">
+              {[...Array(12)].map((_, i) => (
+                <span
+                  key={i}
+                  className="font-subheading text-sm sm:text-lg uppercase tracking-[0.4em] pr-10"
+                  style={{ color: blackText }}
+                >
+                  [pmt · prometheus]
+                </span>
+              ))}
+            </div>
+          </div>
+
         </div>
 
         {/* Phase 3: Editorial Statement */}
