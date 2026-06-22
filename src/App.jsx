@@ -11,6 +11,7 @@ import Profile         from './components/Profile';
 import MultiCrop       from './components/MultiCrop';
 import Layout          from './components/Layout';
 import AnalysisResults from './components/AnalysisResults';
+import About           from './pages/About';
 import AdminDashboard  from './pages/AdminDashboard';
 import MarketAnalytics from './pages/MarketAnalytics';
 
@@ -54,6 +55,7 @@ const AppContent = () => {
         <Route path="/analysis-results" element={<AnalysisResults />} />
         <Route path="/profile"          element={<Profile />} />
         <Route path="/multi-crop"       element={<MultiCrop />} />
+        <Route path="/about"            element={<About />} />
       </Route>
 
       {/* Admin routes */}

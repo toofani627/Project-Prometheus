@@ -22,6 +22,7 @@ const Layout = () => {
     { path: '/ai-analysis', label: t('navDashboard') },
     { path: '/multi-crop',  label: t('navCompanion') },
     { path: '/profile',     label: t('navProfile') },
+    { path: '/about',       label: 'About' },
   ];
 
   const langOptions = [
