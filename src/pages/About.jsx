@@ -50,18 +50,35 @@ const About = () => {
         className="fixed top-16 left-0 w-full overflow-hidden pointer-events-none" 
         style={{ height: 'calc(100vh - 64px)', zIndex: 0 }}
       >
-        {/* Massive Typographic Geometry */}
-        <div ref={pmtRef} className="absolute inset-0 flex items-center justify-center">
-          <span 
-            className="font-heading leading-none tracking-tighter"
-            style={{ 
-              color: blackText, 
-              fontSize: 'min(50vw, 600px)',
-              textShadow: `8px 8px 0 ${whiteText}20` 
-            }}
-          >
-            PMT
-          </span>
+        <style>{`
+          @keyframes bus-marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .animate-bus {
+            display: inline-block;
+            white-space: nowrap;
+            animation: bus-marquee 25s linear infinite;
+          }
+        `}</style>
+
+        {/* Massive Typographic Geometry - Bus Marquee */}
+        <div className="absolute inset-0 flex items-center">
+          <div className="animate-bus">
+            {[...Array(6)].map((_, i) => (
+              <span 
+                key={i}
+                className="font-heading leading-none tracking-tighter pr-16 sm:pr-32"
+                style={{ 
+                  color: blackText, 
+                  fontSize: 'min(60vw, 600px)',
+                  textShadow: `8px 8px 0 ${whiteText}20` 
+                }}
+              >
+                PMT
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Phase 3: Editorial Statement */}
