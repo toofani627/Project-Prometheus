@@ -208,6 +208,14 @@ const translations = {
     enterNameDesc: 'Enter your name',
     namePlaceholder: 'e.g. John Doe',
 
+    // Land Size
+    totalLandSize: 'Total Land Size',
+    totalLandSizeDesc: 'Your total farm area — used for yield & profit calculations',
+    landSizePlaceholder: 'e.g. 5',
+    selectUnit: 'Select Unit',
+    stepLandSize: 'Land Size',
+    landSizeLabel: 'LAND SIZE',
+
   },
   hi: {
     // Language Selection
@@ -410,6 +418,14 @@ const translations = {
     farmerNameLabel: 'किसान का नाम',
     enterNameDesc: 'अपना नाम दर्ज करें',
     namePlaceholder: 'उदा. राम',
+
+    // Land Size
+    totalLandSize: 'कुल खेत का क्षेत्र',
+    totalLandSizeDesc: 'आपके खेत का कुल क्षेत्र — पैदावार और लाभ गणना के लिए',
+    landSizePlaceholder: 'जैसे 5',
+    selectUnit: 'इकाई चुनें',
+    stepLandSize: 'भूमि क्षेत्र',
+    landSizeLabel: 'भूमि क्षेत्र',
 
   },
   ta: {
@@ -614,6 +630,14 @@ const translations = {
     farmerNameLabel: 'விவசாயி பெயர்',
     enterNameDesc: 'உங்கள் பெயரை உள்ளிடவும்',
     namePlaceholder: 'உதா. ராமன்',
+
+    // Land Size
+    totalLandSize: 'மொத்த நில அளவு',
+    totalLandSizeDesc: 'உங்கள் மொத்த வயல் பரப்பு — மகசூல் மற்றும் இலாப கணக்கீட்டிற்கு',
+    landSizePlaceholder: 'எ.கா. 5',
+    selectUnit: 'அலகு தேர்க',
+    stepLandSize: 'நில அளவு',
+    landSizeLabel: 'நில அளவு',
 
   },
 };

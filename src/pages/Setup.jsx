@@ -26,6 +26,8 @@ const Setup = () => {
   const [fertilizers, setFertilizers] = useState([
     { id: 1, name: '', amount: '', unit: 'kgs/bigha' }
   ]);
+  const [landSize, setLandSize] = useState('');
+  const [landUnit, setLandUnit] = useState('bigha');
   const [nextCropId, setNextCropId] = useState(3);
   const [nextFertId, setNextFertId] = useState(2);
   const [error, setError] = useState('');
@@ -81,7 +83,13 @@ const Setup = () => {
       const res = await fetch(`${API_URL}/api/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, crops: cleanCrops, fertilizers: cleanFerts })
+        body: JSON.stringify({ 
+          username, 
+          crops: cleanCrops, 
+          fertilizers: cleanFerts,
+          landSize: landSize ? parseFloat(landSize) : null,
+          landUnit
+        })
       });
       if (!res.ok) throw new Error('Save failed');
       navigate('/ai-analysis', { replace: true });
@@ -149,13 +157,13 @@ const Setup = () => {
           </p>
           {/* Step indicator */}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
-            {[t('stepLastCrops'), t('stepFertilizers'), t('stepDone')].map((label, i) => (
+            {[t('stepLastCrops'), t('stepFertilizers'), t('stepLandSize'), t('stepDone')].map((label, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '50%', backgroundColor: i < 2 ? 'var(--color-neo-green-dark)' : 'rgba(var(--color-neo-cream-rgb),0.1)', border: `1px solid ${i < 2 ? 'var(--color-neo-green-dark)' : 'rgba(var(--color-neo-cream-rgb),0.2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: 'var(--color-neo-cream)' }}>
+                <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '50%', backgroundColor: i < 3 ? 'var(--color-neo-green-dark)' : 'rgba(var(--color-neo-cream-rgb),0.1)', border: `1px solid ${i < 3 ? 'var(--color-neo-green-dark)' : 'rgba(var(--color-neo-cream-rgb),0.2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: 'var(--color-neo-cream)' }}>
                   {i + 1}
                 </div>
                 <span style={{ fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.4)' }}>{label}</span>
-                {i < 2 && <span style={{ fontSize: '0.6rem', color: 'rgba(var(--color-neo-cream-rgb),0.2)' }}>›</span>}
+                {i < 3 && <span style={{ fontSize: '0.6rem', color: 'rgba(var(--color-neo-cream-rgb),0.2)' }}>›</span>}
               </div>
             ))}
           </div>
@@ -292,6 +300,44 @@ const Setup = () => {
           >
             {t('addFertilizerBtn')}
           </button>
+        </div>
+
+        {/* ── Section 3: Land Size ────────────────────────────────────── */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', border: '2px solid var(--color-neo-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.65rem', fontFamily: 'var(--font-heading)' }}>03</div>
+            <div>
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{t('totalLandSize')}</p>
+              <p style={{ fontSize: '0.65rem', color: 'rgba(var(--color-neo-cream-rgb),0.4)', marginTop: '0.1rem' }}>{t('totalLandSizeDesc')}</p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>{t('landSizeLabel')}</label>
+              <input
+                type="number"
+                placeholder={t('landSizePlaceholder')}
+                value={landSize}
+                onChange={(e) => setLandSize(e.target.value)}
+                style={inputStyle}
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div style={{ width: '120px' }}>
+              <label style={labelStyle}>{t('selectUnit')}</label>
+              <select
+                value={landUnit}
+                onChange={(e) => setLandUnit(e.target.value)}
+                style={inputStyle}
+              >
+                <option value="bigha">Bigha</option>
+                <option value="acre">Acre</option>
+                <option value="hectare">Hectare</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* ── Error ───────────────────────────────────────────────────── */}

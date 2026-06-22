@@ -122,6 +122,21 @@ const AIAnalysis = () => {
     }
   }, [searchParams]);
 
+  // On mount, set default land size from profile
+  useEffect(() => {
+    try {
+      const profileKey = getProfileKey();
+      const raw = localStorage.getItem(profileKey);
+      if (raw) {
+        const profile = JSON.parse(raw);
+        if (profile.landUnit) setAreaUnit(profile.landUnit);
+        if (profile.landSize) setFieldArea(String(profile.landSize));
+      }
+    } catch (e) {
+      console.warn("Could not load preferred land size", e);
+    }
+  }, []);
+
   /**
    * Fetch sensor data from ESP32 via WebSocket (on-demand):
    * 1. User clicks "Get Data"
@@ -495,6 +510,10 @@ const AIAnalysis = () => {
           farmHistoryPayload.fertilizer_used_name = fert.name?.trim() || null;
           farmHistoryPayload.fertilizer_amount = fert.amount ? parseFloat(fert.amount) : null;
           farmHistoryPayload.fertilizer_unit = fert.unit || null;
+        }
+        if (profile.landSize) {
+          farmHistoryPayload.land_size = profile.landSize;
+          farmHistoryPayload.land_unit = profile.landUnit || 'bigha';
         }
       }
     } catch (err) {

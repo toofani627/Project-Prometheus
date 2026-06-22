@@ -13,6 +13,8 @@ const Profile = () => {
   // Profile data
   const [lastDevice, setLastDevice] = useState(null);
   const [farmerName, setFarmerName] = useState('');
+  const [landSize, setLandSize] = useState('');
+  const [landUnit, setLandUnit] = useState('bigha');
   const [crops, setCrops] = useState([{ id: 1, name: '', dateGrown: '' }]);
   const [fertilizers, setFertilizers] = useState([{ id: 1, name: '', amount: '', unit: 'kgs/bigha' }]);
   const [nextCropId, setNextCropId] = useState(2);
@@ -39,6 +41,8 @@ const Profile = () => {
             const data = await res.json();
             setLastDevice(data.lastDevice || null);
             if (data.farmerName) setFarmerName(data.farmerName);
+            if (data.landSize) setLandSize(String(data.landSize));
+            if (data.landUnit) setLandUnit(data.landUnit);
             if (Array.isArray(data.crops) && data.crops.length > 0) {
               setCrops(data.crops);
               setNextCropId(Math.max(...data.crops.map(c => c.id || 0)) + 1);
@@ -63,6 +67,8 @@ const Profile = () => {
           const cached = JSON.parse(raw);
           if (cached.lastDevice) setLastDevice(cached.lastDevice);
           if (cached.farmerName) setFarmerName(cached.farmerName);
+          if (cached.landSize) setLandSize(String(cached.landSize));
+          if (cached.landUnit) setLandUnit(cached.landUnit);
           if (Array.isArray(cached.crops) && cached.crops.length > 0) {
             setCrops(cached.crops);
             setNextCropId(Math.max(...cached.crops.map(c => c.id || 0)) + 1);
@@ -87,6 +93,8 @@ const Profile = () => {
 
     const payload = {
       farmerName,
+      landSize: landSize ? parseFloat(landSize) : null,
+      landUnit,
       crops: crops.filter(c => c.name.trim() !== ''),
       fertilizers: fertilizers.filter(f => f.name.trim() !== '')
     };
@@ -398,6 +406,48 @@ const Profile = () => {
               >
                 {t('addNewFertilizerBtn')}
               </button>
+            </div>
+
+            {/* ── Section 5: Land Size ──────────────────────────────────── */}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(var(--color-neo-cream-rgb),0.1)' }}>
+                <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', border: '2px solid var(--color-neo-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.65rem', fontFamily: 'var(--font-heading)' }}>05</div>
+                <div>
+                  <h2 style={{ fontSize: '1rem', fontFamily: 'var(--font-heading)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{t('stepLandSize')}</h2>
+                  <p style={{ fontSize: '0.65rem', color: 'rgba(var(--color-neo-cream-rgb),0.5)', marginTop: '0.15rem' }}>{t('totalLandSizeDesc')}</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.45)', marginBottom: '0.35rem' }}>
+                    {t('landSizeLabel')}
+                  </label>
+                  <input
+                    type="number"
+                    placeholder={t('landSizePlaceholder')}
+                    value={landSize}
+                    onChange={(e) => setLandSize(e.target.value)}
+                    style={inputStyle}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div style={{ width: '120px' }}>
+                  <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--color-neo-cream-rgb),0.45)', marginBottom: '0.35rem' }}>
+                    {t('selectUnit')}
+                  </label>
+                  <select
+                    value={landUnit}
+                    onChange={(e) => setLandUnit(e.target.value)}
+                    style={{ ...inputStyle, colorScheme: 'dark' }}
+                  >
+                    <option value="bigha">Bigha</option>
+                    <option value="acre">Acre</option>
+                    <option value="hectare">Hectare</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* ── Save Button ───────────────────────────────────────────── */}
