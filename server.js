@@ -115,7 +115,7 @@ const roundTo = (value, decimals = 1) => {
  * Values are moisture-correlated so they feel agronomically plausible.
  */
 const enrichTelemetryWithMockSensors = (payload = {}) => {
-  const soilMoisture = toNumberOrNull(payload.soil_moisture ?? payload.soilMoisture);
+  const soilMoisture = toNumberOrNull(payload.soil_moisture ?? payload.soilMoisture ?? payload.moisture);
   if (soilMoisture === null) {
     return payload;
   }
