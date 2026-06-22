@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { companionCropData } from '../lib/companionCropData';
 
 const MultiCrop = () => {
   const { language } = useLanguage();
@@ -53,36 +54,18 @@ const MultiCrop = () => {
       return;
     }
     setLoading(true); setError(''); setResult(null);
-    try {
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      const authDeviceId = localStorage.getItem('auth_deviceId') || '';
-      const farmHistoryDataStr = localStorage.getItem('farmHistoryData');
-      const farmHistory = farmHistoryDataStr ? JSON.parse(farmHistoryDataStr) : undefined;
-      
-      const savedDevicesStr = localStorage.getItem('ai_analysis_devices');
-      const savedDevices = savedDevicesStr ? JSON.parse(savedDevicesStr) : [];
-      const latestTelemetry = savedDevices.length > 0 ? savedDevices[0].raw : undefined;
-      
-      const response = await fetch(`${baseUrl}/api/ai/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          mode: 'companion', 
-          crop: currentCrop, 
-          stage: growthStage, 
-          language: language || 'en',
-          deviceId: authDeviceId,
-          farmHistory: farmHistory,
-          telemetry: latestTelemetry
-        })
-      });
-      if (!response.ok) { const e = await response.json(); throw new Error(e.error || `HTTP ${response.status}`); }
-      setResult(await response.json());
-    } catch (err) {
-      setError(language === 'hi' ? 'AI से सुझाव नहीं मिल सका। कृपया दोबारा कोशिश करें।' : language === 'ta' ? 'AI யிலிருந்து பரிந்துரை பெற முடியவில்லை.' : 'Could not get recommendation from AI. Please try again.');
-    } finally {
+    
+    // Simulate a slight delay for better UX
+    setTimeout(() => {
+      const cropInfo = companionCropData[currentCrop];
+      if (cropInfo) {
+        const langData = cropInfo[language] || cropInfo['en'];
+        setResult(langData);
+      } else {
+        setError(language === 'hi' ? 'इस फसल के लिए कोई साथी डेटा नहीं मिला।' : language === 'ta' ? 'இந்தப் பயிருக்கு கூட்டுத் தரவு இல்லை.' : 'No companion data found for this crop.');
+      }
       setLoading(false);
-    }
+    }, 800);
   };
 
   const crops = [
