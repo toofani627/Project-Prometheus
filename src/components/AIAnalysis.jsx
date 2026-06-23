@@ -1754,7 +1754,7 @@ const AIAnalysis = () => {
                     {/* Plant Now CTA */}
                     <button
                       id={`plant-now-crop-${rank}`}
-                      onClick={() => navigate('/multi-crop')}
+                      onClick={() => navigate(`/multi-crop?crop=${encodeURIComponent(crop.name)}`)}
                       className={`w-full py-2.5 rounded-xl text-xs font-bold font-subheading uppercase tracking-widest transition-all duration-150 mt-auto ${
                         isTop
                           ? 'text-neo-cream border border-neo-green-dark hover:bg-neo-cream hover:text-black'
