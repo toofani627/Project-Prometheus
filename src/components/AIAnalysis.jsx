@@ -267,18 +267,17 @@ const AIAnalysis = () => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           
-          // Basic soil health formula (0-100) based on NPK and Moisture
-          let score = 100;
+          // The new calculateSoilHealth algorithm
           const s = Number(newDevice.soil) || 0;
           const n = Number(newDevice.nitrogen) || 0;
           const p = Number(newDevice.phosphorus) || 0;
           const k = Number(newDevice.potassium) || 0;
+          const ph = Number(newDevice.ph) || 6.8; // Assume 6.8 if not provided
           
-          if (s < 20 || s > 80) score -= 20;
-          if (n < 50) score -= 15;
-          if (p < 20) score -= 10;
-          if (k < 100) score -= 10;
-          score = Math.max(0, score);
+          const moistureScore = Math.max(0, 100 - Math.abs(s - 60) * 2);
+          const phScore = Math.max(0, 100 - Math.abs(ph - 6.8) * 25);
+          const npkScore = Math.min(100, ((n + p + k) / 300) * 100); 
+          const score = Math.round((moistureScore * 0.4) + (npkScore * 0.4) + (phScore * 0.2));
           
           const scanData = {
             lat, lng, soilHealth: score,
