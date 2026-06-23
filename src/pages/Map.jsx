@@ -1,7 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, Circle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useLanguage } from '../context/LanguageContext';
+import { getSession } from '../lib/auth';
+
+// Helper component to smoothly re-center the map when userLocation is found
+const MapController = ({ center, zoom }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.flyTo(center, zoom, { duration: 1.5 });
+    }
+  }, [center, zoom, map]);
+  return null;
+};
 
 const getHealthColor = (score) => {
   if (score <= 35) return '#00B4D8';
@@ -20,17 +32,26 @@ const MapPage = () => {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userLocation, setUserLocation] = useState(null);
+
+  const session = getSession();
 
   useEffect(() => {
+    // Get live location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+      });
+    }
+
     const fetchScans = async () => {
-      const currentUser = localStorage.getItem('currentUser');
-      if (!currentUser) {
+      if (!session) {
         setLoading(false);
         return;
       }
       
       try {
-        const res = await fetch(`/api/soil-scans?username=${currentUser}`);
+        const res = await fetch(`/api/soil-scans?username=${session.username}`);
         const data = await res.json();
         if (data.success) {
           // Filter out invalid scans that don't have proper coordinates
@@ -51,8 +72,10 @@ const MapPage = () => {
     fetchScans();
   }, []);
 
-  // Determine initial center. Default to center of India if no scans exist.
-  const center = scans.length > 0 
+  // Determine initial center. Default to user location, then latest scan, then center of India
+  const center = userLocation 
+    ? userLocation 
+    : scans.length > 0 
     ? [scans[scans.length - 1].lat, scans[scans.length - 1].lng] 
     : [22.0, 78.0];
 
@@ -61,7 +84,7 @@ const MapPage = () => {
       {/* Glassmorphism Header Overlay */}
       <div className="absolute top-6 left-6 z-[1000] max-w-md p-6 rounded-2xl border border-white/15 backdrop-blur-md bg-black/40 shadow-2xl pointer-events-none">
         <h1 className="font-heading text-3xl sm:text-4xl text-white uppercase tracking-widest mb-2">
-          Soil <span className="text-[#00B4D8]">Telemetry</span>
+          Soil <span className="text-neo-green-dark">Telemetry</span>
         </h1>
         <p className="font-body text-white/70 text-sm mb-4">
           {language === 'hi' 
@@ -86,7 +109,7 @@ const MapPage = () => {
           </div>
         </div>
 
-        {!localStorage.getItem('currentUser') && (
+        {!session && (
           <div className="mt-4 p-3 border border-red-500/50 rounded-xl bg-red-500/10 text-red-400 text-xs">
             You must be logged in to sync and save map locations.
           </div>
@@ -97,14 +120,44 @@ const MapPage = () => {
       <div className="w-full flex-1 relative z-0">
         <MapContainer 
           center={center} 
-          zoom={4} 
+          zoom={userLocation ? 10 : 4} 
           style={{ height: '100%', width: '100%' }}
           zoomControl={true}
         >
+          <MapController center={center} zoom={userLocation ? 10 : 4} />
+          
           <TileLayer
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           />
+          
+          {userLocation && (
+            <>
+              {/* Pulsing accuracy circle */}
+              <Circle 
+                center={userLocation} 
+                radius={2000} 
+                pathOptions={{ fillColor: '#3b82f6', fillOpacity: 0.1, color: 'transparent' }} 
+              />
+              {/* Core location dot */}
+              <CircleMarker
+                center={userLocation}
+                radius={6}
+                pathOptions={{
+                  fillColor: '#3b82f6',
+                  fillOpacity: 1,
+                  color: '#ffffff',
+                  weight: 2,
+                }}
+              >
+                <Popup className="custom-dark-popup">
+                  <div className="text-white font-mono text-xs uppercase tracking-widest">
+                    You are here
+                  </div>
+                </Popup>
+              </CircleMarker>
+            </>
+          )}
           
           {scans.map((scan, i) => (
             <CircleMarker
