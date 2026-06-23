@@ -416,6 +416,8 @@ wss.on('connection', (ws, req) => {
         if (deviceInfo) {
           deviceInfo.data = enrichedData;
           deviceInfo.lastUpdate = Date.now();
+          deviceInfo.connected = true;
+          deviceInfo.ws = ws;
           console.log(`Data received from ${deviceId}:`, {
             temp: enrichedData.temperature,
             humidity: enrichedData.humidity,
