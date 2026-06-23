@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, Circle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import 'leaflet.heat';
 import { useLanguage } from '../context/LanguageContext';
 import { getSession } from '../lib/auth';
 
@@ -15,15 +17,49 @@ const MapController = ({ center, zoom }) => {
   return null;
 };
 
+// Helper component for the Heatmap layer
+const HeatmapLayer = ({ scans }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (!scans || scans.length === 0) return;
+    
+    // Map scans to [lat, lng, intensity]
+    const points = scans.map(s => [s.lat, s.lng, s.soilHealth]);
+    
+    const heatLayer = L.heatLayer(points, {
+      radius: 40,
+      blur: 25,
+      maxZoom: 12,
+      max: 100, // Maximum score
+      gradient: {
+        0.2: '#000080', // Deep Blue
+        0.4: '#00FFFF', // Cyan
+        0.6: '#00FF00', // Green
+        0.8: '#FFFF00', // Yellow
+        1.0: '#FF0000', // Red
+      }
+    }).addTo(map);
+
+    return () => {
+      map.removeLayer(heatLayer);
+    };
+  }, [map, scans]);
+  return null;
+};
+
 const getHealthColor = (score) => {
-  if (score < 40) return '#ef4444'; // Red
-  if (score < 70) return '#E0F5DC'; // Light Green
-  return '#157A26'; // Dark Green
+  if (score <= 20) return '#000080';
+  if (score <= 40) return '#00FFFF';
+  if (score <= 60) return '#00FF00';
+  if (score <= 80) return '#FFFF00';
+  return '#FF0000';
 };
 
 const getHealthLabel = (score) => {
-  if (score < 40) return 'Poor';
-  if (score < 70) return 'Moderate';
+  if (score <= 20) return 'Very Poor';
+  if (score <= 40) return 'Poor';
+  if (score <= 60) return 'Moderate';
+  if (score <= 80) return 'Good';
   return 'Prime';
 };
 
@@ -58,21 +94,7 @@ const MapPage = () => {
           const validScans = (data.soilScans || []).filter(
             s => typeof s.lat === 'number' && typeof s.lng === 'number' && !isNaN(s.lat) && !isNaN(s.lng)
           );
-          
-          if (validScans.length === 0) {
-            // Provide realistic demo data if user has no real scans
-            const demoScans = [
-              { lat: 28.6139, lng: 77.2090, soilHealth: 32, moisture: 45, ph: 5.8, n: 30, p: 15, k: 80, timestamp: Date.now() - 100000 },
-              { lat: 19.0760, lng: 72.8777, soilHealth: 65, moisture: 55, ph: 6.5, n: 60, p: 30, k: 120, timestamp: Date.now() - 500000 },
-              { lat: 13.0827, lng: 80.2707, soilHealth: 88, moisture: 62, ph: 6.8, n: 80, p: 45, k: 150, timestamp: Date.now() - 900000 },
-              { lat: 22.5726, lng: 88.3639, soilHealth: 48, moisture: 70, ph: 7.2, n: 40, p: 20, k: 90, timestamp: Date.now() - 1500000 },
-              { lat: 12.9716, lng: 77.5946, soilHealth: 95, moisture: 60, ph: 6.7, n: 90, p: 50, k: 160, timestamp: Date.now() - 2000000 },
-              { lat: 23.0225, lng: 72.5714, soilHealth: 25, moisture: 30, ph: 8.1, n: 20, p: 10, k: 60, timestamp: Date.now() - 3000000 }
-            ];
-            setScans(demoScans);
-          } else {
-            setScans(validScans);
-          }
+          setScans(validScans);
         } else {
           setError(data.error);
         }
@@ -110,16 +132,24 @@ const MapPage = () => {
         
         <div className="flex flex-col gap-2 text-xs font-mono tracking-widest text-white/80 uppercase">
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-            <span>0-39 (Poor)</span>
+            <div className="w-3 h-3 rounded-full bg-[#000080] shadow-[0_0_8px_rgba(0,0,128,0.8)]" />
+            <span>0-20 (Very Poor)</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-[#E0F5DC] shadow-[0_0_8px_rgba(224,245,220,0.8)]" />
-            <span>40-69 (Moderate)</span>
+            <div className="w-3 h-3 rounded-full bg-[#00FFFF] shadow-[0_0_8px_rgba(0,255,255,0.8)]" />
+            <span>21-40 (Poor)</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-[#157A26] shadow-[0_0_8px_rgba(21,122,38,0.8)]" />
-            <span>70-100 (Prime)</span>
+            <div className="w-3 h-3 rounded-full bg-[#00FF00] shadow-[0_0_8px_rgba(0,255,0,0.8)]" />
+            <span>41-60 (Moderate)</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-[#FFFF00] shadow-[0_0_8px_rgba(255,255,0,0.8)]" />
+            <span>61-80 (Good)</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-[#FF0000] shadow-[0_0_8px_rgba(255,0,0,0.8)]" />
+            <span>81-100 (Prime)</span>
           </div>
         </div>
 
@@ -144,6 +174,9 @@ const MapPage = () => {
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           />
+
+          {/* Add Heatmap rendering underneath the pinpoint markers */}
+          <HeatmapLayer scans={scans} />
           
           {userLocation && (
             <>
