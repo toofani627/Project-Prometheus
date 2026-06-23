@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, Text } from '@react-three/drei';
+import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -23,11 +23,15 @@ const TerrainMap = ({ scans }) => {
   
   // Normalize scan coordinates to the 3D local space (-size/2 to size/2)
   const normalizedScans = useMemo(() => {
-    if (!scans || scans.length === 0) return [];
+    if (!scans || !Array.isArray(scans)) return [];
+    
+    // Filter out invalid scans
+    const validScans = scans.filter(s => typeof s.lat === 'number' && typeof s.lng === 'number' && !isNaN(s.lat) && !isNaN(s.lng));
+    if (validScans.length === 0) return [];
     
     // Find bounding box of lat/lng
-    const lats = scans.map(s => s.lat);
-    const lngs = scans.map(s => s.lng);
+    const lats = validScans.map(s => s.lat);
+    const lngs = validScans.map(s => s.lng);
     const minLat = Math.min(...lats);
     const maxLat = Math.max(...lats);
     const minLng = Math.min(...lngs);
@@ -37,8 +41,9 @@ const TerrainMap = ({ scans }) => {
     const latRange = maxLat - minLat === 0 ? 1 : maxLat - minLat;
     const lngRange = maxLng - minLng === 0 ? 1 : maxLng - minLng;
     
-    return scans.map(s => ({
+    return validScans.map(s => ({
       ...s,
+      soilHealth: typeof s.soilHealth === 'number' && !isNaN(s.soilHealth) ? s.soilHealth : 50,
       x: ((s.lng - minLng) / lngRange - 0.5) * (size * 0.8), // X maps to Longitude
       z: -((s.lat - minLat) / latRange - 0.5) * (size * 0.8) // Z maps to Latitude (inverted)
     }));
@@ -149,6 +154,31 @@ const TerrainMap = ({ scans }) => {
 };
 
 
+class MapErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Map rendering error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-neo-dark text-neo-cream p-6 text-center">
+          <h2 className="text-xl text-red-500 mb-2">3D Map Failed to Load</h2>
+          <p className="text-sm opacity-70 mb-4">{this.state.error?.message || "Unknown rendering error."}</p>
+          <button onClick={() => this.setState({ hasError: false })} className="px-4 py-2 bg-neo-green-dark rounded">Retry</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const MapPage = () => {
   const { language } = useLanguage();
   const { theme } = useTheme();
@@ -232,25 +262,27 @@ const MapPage = () => {
       )}
 
       {/* 3D Canvas */}
-      <div className="w-full flex-1">
-        <Canvas camera={{ position: [0, 15, 25], fov: 45 }}>
-          <color attach="background" args={['#0a0f0d']} />
-          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-          <ambientLight intensity={0.4} />
-          <directionalLight position={[10, 20, 10]} intensity={1} castShadow />
-          <pointLight position={[-10, 10, -10]} color="#4488ff" intensity={0.5} />
-          
-          <TerrainMap scans={scans} />
-          
-          <OrbitControls 
-            enablePan={true} 
-            enableZoom={true} 
-            enableRotate={true}
-            maxPolarAngle={Math.PI / 2 - 0.05} // don't go below ground
-            minDistance={5}
-            maxDistance={50}
-          />
-        </Canvas>
+      <div className="w-full flex-1 relative">
+        <MapErrorBoundary>
+          <Canvas camera={{ position: [0, 15, 25], fov: 45 }}>
+            <color attach="background" args={['#0a0f0d']} />
+            <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+            <ambientLight intensity={0.4} />
+            <directionalLight position={[10, 20, 10]} intensity={1} castShadow />
+            <pointLight position={[-10, 10, -10]} color="#4488ff" intensity={0.5} />
+            
+            <TerrainMap scans={scans} />
+            
+            <OrbitControls 
+              enablePan={true} 
+              enableZoom={true} 
+              enableRotate={true}
+              maxPolarAngle={Math.PI / 2 - 0.05} // don't go below ground
+              minDistance={5}
+              maxDistance={50}
+            />
+          </Canvas>
+        </MapErrorBoundary>
       </div>
     </div>
   );
