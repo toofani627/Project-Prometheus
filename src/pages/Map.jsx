@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { OrbitControls, Stars, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -16,6 +16,7 @@ const getHealthColor = (score) => {
 // Generates the Topographic Terrain based on Soil Scans
 const TerrainMap = ({ scans }) => {
   const meshRef = useRef();
+  const indiaMapTexture = useTexture('/india-map-mask.png');
   
   // Grid parameters
   const segments = 60;
@@ -29,23 +30,19 @@ const TerrainMap = ({ scans }) => {
     const validScans = scans.filter(s => typeof s.lat === 'number' && typeof s.lng === 'number' && !isNaN(s.lat) && !isNaN(s.lng));
     if (validScans.length === 0) return [];
     
-    // Find bounding box of lat/lng
-    const lats = validScans.map(s => s.lat);
-    const lngs = validScans.map(s => s.lng);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs);
-    const maxLng = Math.max(...lngs);
-    
-    // Avoid division by zero if only one point
-    const latRange = maxLat - minLat === 0 ? 1 : maxLat - minLat;
-    const lngRange = maxLng - minLng === 0 ? 1 : maxLng - minLng;
+    // Fixed India Bounding Box
+    const minLat = 8.0;
+    const maxLat = 37.0;
+    const minLng = 68.0;
+    const maxLng = 97.0;
+    const latRange = maxLat - minLat;
+    const lngRange = maxLng - minLng;
     
     return validScans.map(s => ({
       ...s,
       soilHealth: typeof s.soilHealth === 'number' && !isNaN(s.soilHealth) ? s.soilHealth : 50,
-      x: ((s.lng - minLng) / lngRange - 0.5) * (size * 0.8), // X maps to Longitude
-      z: -((s.lat - minLat) / latRange - 0.5) * (size * 0.8) // Z maps to Latitude (inverted)
+      x: ((s.lng - minLng) / lngRange - 0.5) * size, // X maps to Longitude
+      z: -((s.lat - minLat) / latRange - 0.5) * size // Z maps to Latitude (inverted)
     }));
   }, [scans, size]);
 
@@ -123,6 +120,8 @@ const TerrainMap = ({ scans }) => {
           metalness={0.1}
           transmission={0.5} // Glass effect
           side={THREE.DoubleSide}
+          alphaMap={indiaMapTexture}
+          alphaTest={0.1}
         />
       </mesh>
       
@@ -132,7 +131,9 @@ const TerrainMap = ({ scans }) => {
           vertexColors 
           wireframe={true} 
           transparent={true} 
-          opacity={0.15} 
+          opacity={0.35} 
+          alphaMap={indiaMapTexture}
+          alphaTest={0.1}
         />
       </mesh>
 
