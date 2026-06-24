@@ -153,8 +153,46 @@ const MapPage = () => {
           </div>
         </div>
 
-        {!session && (
-          <div className="mt-4 p-3 border border-red-500/50 rounded-xl bg-red-500/10 text-red-400 text-xs">
+        {session ? (
+          <button 
+            onClick={async () => {
+              // Generate 50 points around IIIT Delhi
+              const promises = [];
+              for (let i = 0; i < 50; i++) {
+                const lat = 28.5457 + (Math.random() - 0.5) * 0.01;
+                const lng = 77.2732 + (Math.random() - 0.5) * 0.01;
+                
+                const distance = Math.sqrt(Math.pow(lat - 28.5457, 2) + Math.pow(lng - 77.2732, 2));
+                let score = 90 - (distance / 0.005) * 60 + (Math.random() * 20 - 10);
+                score = Math.max(10, Math.min(100, Math.round(score)));
+                
+                const scanData = {
+                  lat, lng, soilHealth: score,
+                  n: Math.round(40 + Math.random()*20), 
+                  p: Math.round(20 + Math.random()*10), 
+                  k: Math.round(140 + Math.random()*20), 
+                  moisture: Math.round(50 + Math.random()*20), 
+                  temp: 32,
+                  timestamp: new Date().toISOString()
+                };
+                
+                promises.push(
+                  fetch('/api/soil-scans', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: session.username, scan: scanData })
+                  })
+                );
+              }
+              await Promise.all(promises);
+              window.location.reload();
+            }}
+            className="mt-4 w-full py-2 bg-neo-green-dark/20 hover:bg-neo-green-dark/40 border border-neo-green-dark/50 rounded-xl text-neo-green-light text-xs font-mono tracking-widest transition-colors pointer-events-auto"
+          >
+            Generate IIIT Delhi Demo
+          </button>
+        ) : (
+          <div className="mt-4 p-3 border border-red-500/50 rounded-xl bg-red-500/10 text-red-400 text-xs pointer-events-auto">
             You must be logged in to sync and save map locations.
           </div>
         )}
