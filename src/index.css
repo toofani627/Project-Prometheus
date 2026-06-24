@@ -168,3 +168,8 @@ input:-webkit-autofill:focus {
   margin: 12px;
 }
 
+/* Fix default grey map background flashing before dark tiles load */
+.leaflet-container {
+  background-color: #0a0a0a !important;
+}
+

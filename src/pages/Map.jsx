@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, Circle, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, Circle, useMap, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import 'leaflet.heat';
@@ -118,11 +118,11 @@ const MapPage = () => {
   return (
     <div className="relative w-full h-[calc(100vh-4rem)] bg-[#0a0a0a] overflow-hidden flex flex-col font-body">
       {/* Glassmorphism Header Overlay */}
-      <div className="absolute top-6 left-6 z-[1000] max-w-md p-6 rounded-2xl border border-white/15 backdrop-blur-md bg-black/40 shadow-2xl pointer-events-none">
-        <h1 className="font-heading text-3xl sm:text-4xl text-white uppercase tracking-widest mb-2">
+      <div className="absolute top-4 left-4 right-4 sm:top-6 sm:left-6 sm:right-auto z-[1000] sm:max-w-md p-4 sm:p-6 rounded-2xl border border-white/15 backdrop-blur-md bg-black/70 shadow-2xl pointer-events-none">
+        <h1 className="font-heading text-2xl sm:text-4xl text-white uppercase tracking-widest mb-1 sm:mb-2">
           Soil <span className="text-neo-green-dark">Telemetry</span>
         </h1>
-        <p className="font-body text-white/70 text-sm mb-4">
+        <p className="font-body text-white/70 text-xs sm:text-sm mb-3 sm:mb-4">
           {language === 'hi' 
             ? 'आपके प्रोफाइल से जुड़ा लाइव मृदा स्वास्थ्य 2D नक्शा।' 
             : language === 'ta' 
@@ -130,7 +130,7 @@ const MapPage = () => {
             : 'Live 2D soil telemetry map synced with your profile.'}
         </p>
         
-        <div className="flex flex-col gap-2 text-xs font-mono tracking-widest text-white/80 uppercase">
+        <div className="flex flex-col gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-mono tracking-widest text-white/80 uppercase">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 rounded-full bg-[#000080] shadow-[0_0_8px_rgba(0,0,128,0.8)]" />
             <span>0-20 (Very Poor)</span>
@@ -166,8 +166,9 @@ const MapPage = () => {
           center={center} 
           zoom={userLocation ? 10 : 4} 
           style={{ height: '100%', width: '100%' }}
-          zoomControl={true}
+          zoomControl={false}
         >
+          <ZoomControl position="bottomright" />
           <MapController center={center} zoom={userLocation ? 10 : 4} />
           
           <TileLayer
