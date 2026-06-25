@@ -126,10 +126,10 @@ const AnalysisResults = () => {
 
         {/* ── BACK + HEADER ──────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-neo-cream/20 pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
             <button
               onClick={() => navigate('/ai-analysis')}
-              className="flex items-center gap-2 text-neo-cream/50 hover:text-neo-cream transition-colors font-subheading text-xs uppercase tracking-widest shrink-0"
+              className="flex items-center gap-2 text-neo-cream/50 hover:text-neo-cream transition-colors font-subheading text-xs uppercase tracking-widest shrink-0 mt-1 sm:mt-1.5"
               style={{ background: 'none', border: 'none', cursor: 'pointer' }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -142,7 +142,7 @@ const AnalysisResults = () => {
                 {language === 'hi' ? 'फसल सुझाव' : language === 'ta' ? 'பயிர் பரிந்துரைகள்' : 'CROP RECOMMENDATIONS'}
               </h1>
               <p className="font-body text-neo-cream/40 text-xs mt-1 uppercase tracking-widest">
-                {showResults && parsedResult?.top_crops ? `${parsedResult.top_crops.length} ${language === 'hi' ? 'फसलें — मिट्टी के अनुसार क्रमबद्ध' : language === 'ta' ? 'பயிர்கள் — மண் பொருத்தத்தின்படி' : 'crops ranked by soil match · click PLANT NOW to go to companion planting'}` : `${language === 'hi' ? 'डिवाइस:' : 'DEVICE:'} ${deviceId}`}
+                {showResults && parsedResult?.top_crops ? `3 ${language === 'hi' ? 'फसलें — मिट्टी के अनुसार क्रमबद्ध' : language === 'ta' ? 'பயிர்கள் — மண் பொருத்தத்தின்படி' : 'crops ranked by soil match'}` : `${language === 'hi' ? 'डिवाइस:' : 'DEVICE:'} ${deviceId}`}
               </p>
             </div>
           </div>
@@ -413,72 +413,7 @@ const AnalysisResults = () => {
               })}
             </div>
 
-            {/* ── EXTENDED PRIORITY LIST ─────────────────────────────── */}
-            {parsedResult.top_crops.length > 3 && (
-              <div className="mt-2">
-                <button
-                  id="extended-list-btn"
-                  onClick={() => setShowExtended(e => !e)}
-                  className="w-full flex items-center justify-between px-5 py-3.5 rounded-xl border border-neo-cream/15 text-neo-cream/45 font-subheading text-[11px] uppercase tracking-widest hover:border-neo-cream/30 hover:text-neo-cream/65 transition-all duration-150"
-                  style={{ background: 'transparent', backgroundImage: 'none' }}
-                >
-                  <span>
-                    {showExtended
-                      ? '▲  HIDE EXTENDED PRIORITY LIST'
-                      : `▼  VIEW EXTENDED PRIORITY LIST — ${parsedResult.top_crops.length - 3} MORE CROP${parsedResult.top_crops.length - 3 > 1 ? 'S' : ''}`}
-                  </span>
-                  <span className="font-mono text-[10px] text-neo-cream/25">LOWER MATCH</span>
-                </button>
 
-                {showExtended && (
-                  <div className="mt-3 rounded-2xl border border-neo-cream/12 overflow-hidden animate-fadeIn" style={{ background: 'var(--color-table-1)', backgroundImage: 'none' }}>
-                    {/* Header row */}
-                    <div className="flex items-center gap-4 px-5 py-2.5 border-b border-neo-cream/8">
-                      <span className="font-mono text-[9px] text-neo-cream/25 uppercase w-8">Rank</span>
-                      <span className="font-mono text-[9px] text-neo-cream/25 uppercase flex-1">Crop</span>
-                      <span className="font-mono text-[9px] text-neo-cream/25 uppercase w-12 text-right">Match</span>
-                      <span className="font-mono text-[9px] text-neo-cream/25 uppercase w-24 text-right">Action</span>
-                    </div>
-                    {parsedResult.top_crops.slice(3).map((crop, i) => {
-                      const rank = i + 4;
-                      const matchPct = Number(crop.match_percentage) || 0;
-                      return (
-                        <div
-                          key={i}
-                          className="flex items-center gap-4 px-5 py-3.5 border-b border-neo-cream/5 last:border-0 hover:bg-neo-cream/3 transition-colors"
-                        >
-                          {/* Rank */}
-                          <span className="font-mono text-[11px] text-neo-cream/30 w-8">
-                            #{String(rank).padStart(2, '0')}
-                          </span>
-
-                          {/* Name + mini bar */}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-heading text-base text-neo-cream/70 leading-none mb-1 truncate">{crop.name}</p>
-                            <div className="h-1 rounded-full overflow-hidden w-full max-w-[120px]" style={{ background: 'rgba(var(--color-neo-cream-rgb),0.06)' }}>
-                              <div className="h-full rounded-full" style={{ width: `${matchPct}%`, background: 'rgba(var(--color-neo-cream-rgb),0.2)' }} />
-                            </div>
-                          </div>
-
-                          {/* % */}
-                          <span className="font-heading text-xl text-neo-cream/40 w-12 text-right leading-none">{matchPct}<span className="text-xs text-neo-cream/20">%</span></span>
-
-                          {/* Plant now */}
-                          <button
-                            id={`plant-extended-${rank}`}
-                            onClick={() => handlePlantNow(crop.name)}
-                            className="w-24 py-1.5 rounded-lg border border-neo-cream/12 text-neo-cream/35 font-subheading text-[10px] uppercase tracking-widest hover:border-neo-cream/35 hover:text-neo-cream/60 transition-all text-right"
-                            style={{ background: 'transparent', backgroundImage: 'none' }}
-                          >
-                            PLANT →
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 
