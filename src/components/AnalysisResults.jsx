@@ -153,12 +153,8 @@ const AnalysisResults = () => {
               <button
                 id="profit-toggle"
                 onClick={() => setProfitMode(m => !m)}
-                className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all duration-200"
-                style={{
-                  borderColor: 'var(--color-neo-cream)',
-                  backgroundColor: 'var(--color-neo-surface)',
-                  boxShadow: profitMode ? '0 0 15px rgba(var(--color-neo-cream-rgb),0.2)' : 'none'
-                }}
+                className="flex items-center justify-start gap-3 w-[230px] transition-all duration-200"
+                style={{ background: 'transparent', border: 'none' }}
               >
                 <div className={`w-12 h-6 shrink-0 rounded-full border-2 transition-all duration-200 flex items-center relative ${profitMode ? 'border-neo-green-dark bg-neo-green-dark/20' : 'border-neo-cream/40 bg-transparent'}`}>
                   <div className={`w-4 h-4 rounded-full transition-all duration-200 absolute left-0.5 ${profitMode ? 'translate-x-[24px] bg-neo-green-light' : 'translate-x-0 bg-neo-cream'}`} />
@@ -171,12 +167,8 @@ const AnalysisResults = () => {
               <button
                 id="companion-toggle"
                 onClick={() => setCompanionMode(m => !m)}
-                className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all duration-200"
-                style={{
-                  borderColor: 'var(--color-neo-cream)',
-                  backgroundColor: 'var(--color-neo-surface)',
-                  boxShadow: companionMode ? '0 0 15px rgba(var(--color-neo-cream-rgb),0.2)' : 'none'
-                }}
+                className="flex items-center justify-start gap-3 w-[230px] transition-all duration-200"
+                style={{ background: 'transparent', border: 'none' }}
               >
                 <div className={`w-12 h-6 shrink-0 rounded-full border-2 transition-all duration-200 flex items-center relative ${companionMode ? 'border-neo-green-dark bg-neo-green-dark/20' : 'border-neo-cream/40 bg-transparent'}`}>
                   <div className={`w-4 h-4 rounded-full transition-all duration-200 absolute left-0.5 ${companionMode ? 'translate-x-[24px] bg-neo-green-light' : 'translate-x-0 bg-neo-cream'}`} />
