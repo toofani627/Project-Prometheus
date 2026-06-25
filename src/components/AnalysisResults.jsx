@@ -149,7 +149,7 @@ const AnalysisResults = () => {
 
           {/* Toggles */}
           {showResults && parsedResult?.top_crops?.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0">
+            <div className="flex flex-col items-end gap-3 shrink-0">
               <button
                 id="profit-toggle"
                 onClick={() => setProfitMode(m => !m)}
