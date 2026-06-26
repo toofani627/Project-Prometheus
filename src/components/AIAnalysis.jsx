@@ -1920,10 +1920,10 @@ const AIAnalysis = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="font-body text-neo-cream/40 text-sm">{t('developedBy')}</span>
+              <span className="font-body text-neo-cream/40 text-sm uppercase">IT IS DEVELOPED BY</span>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-neo-cream/30 hover:border-neo-cream transition-all">
-                <img src="/cloud-balloon-logo.png" alt="Project Prometheus" className="w-6 h-6 rounded-lg object-contain" />
-                <span className="font-subheading font-semibold text-neo-cream text-sm">Project Prometheus</span>
+                <img src="/cloud-balloon-logo.png" alt="Aradhy Shukla" className="w-6 h-6 rounded-lg object-contain" />
+                <span className="font-subheading font-semibold text-neo-cream text-sm uppercase">ARADHY SHUKLA</span>
               </div>
             </div>
           </div>
