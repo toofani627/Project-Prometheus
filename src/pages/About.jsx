@@ -208,12 +208,49 @@ const About = () => {
           {/* Right: Bio Statement with Inverted Pills */}
           <div className="lg:col-span-6 lg:pl-12">
             <p className="font-body text-3xl sm:text-5xl leading-tight" style={{ color: blackText }}>
-              Created by the team and software lead{' '}
-              <span 
-                className="inline-block px-5 py-2 rounded-2xl mx-1 transform rotate-1 border-2"
-                style={{ 
-                  backgroundColor: greenCanvas, 
-                  color: whiteText, 
+              Created by{' '}
+              {/* Shashank — circular logo, links to GitHub */}
+              <a
+                href="https://github.com/toofani627"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Visit toofani627 on GitHub"
+                className="inline-flex items-center gap-2 mx-1 transform rotate-1 no-underline"
+                style={{ verticalAlign: 'middle' }}
+              >
+                <span
+                  className="inline-flex items-center gap-3 px-5 py-2 rounded-2xl border-2 transition-all duration-200 hover:scale-105"
+                  style={{
+                    backgroundColor: greenCanvas,
+                    color: whiteText,
+                    borderColor: blackText,
+                    fontFamily: "'Rozha One', 'Georgia', serif",
+                    fontStyle: 'italic',
+                    boxShadow: `4px 4px 0 ${blackText}`
+                  }}
+                >
+                  <img
+                    src="/toofani-logo.png"
+                    alt="toofani627"
+                    style={{
+                      width: '1.3em',
+                      height: '1.3em',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      display: 'inline-block',
+                      verticalAlign: 'middle',
+                      flexShrink: 0
+                    }}
+                  />
+                  Shashank
+                </span>
+              </a>
+              {', '}software lead{' '}
+              <span
+                className="inline-block px-5 py-2 rounded-2xl mx-1 mt-3 sm:mt-0 transform -rotate-1 border-2"
+                style={{
+                  backgroundColor: greenCanvas,
+                  color: whiteText,
                   borderColor: blackText,
                   fontFamily: "'Rozha One', 'Georgia', serif",
                   fontStyle: 'italic',
@@ -222,12 +259,12 @@ const About = () => {
               >
                 Aradhy Shukla
               </span>
-              , together with the team{' '}
-              <span 
-                className="inline-block px-5 py-2 rounded-2xl mx-1 mt-3 sm:mt-0 transform -rotate-1 border-2"
-                style={{ 
-                  backgroundColor: greenCanvas, 
-                  color: whiteText, 
+              , and the team{' '}
+              <span
+                className="inline-block px-5 py-2 rounded-2xl mx-1 mt-3 sm:mt-0 transform rotate-1 border-2"
+                style={{
+                  backgroundColor: greenCanvas,
+                  color: whiteText,
                   borderColor: blackText,
                   fontFamily: "'Rozha One', 'Georgia', serif",
                   fontStyle: 'italic',
